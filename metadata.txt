@@ -1,0 +1,40 @@
+# This file contains metadata for your plugin. Since 
+# version 2.0 of QGIS this is the proper way to supply 
+# information about a plugin. The old method of 
+# embedding metadata in __init__.py will 
+# is no longer supported since version 2.0.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=QEPANET
+qgisMinimumVersion=2.14.0
+qgisMaximumVersion=2.99.0
+description=This plugin links QGIS and EPANET. It provides: a set of dedicated editing tools to build a correct EPANET network, to run the simulation and to analyse the results by means of graphs and thematic maps.
+version=0.94.1
+author=UNIBZ - UNITN
+email=albertodeluca3@gmail.com
+
+about=This plugins links QGIS and EPANET: it helps creating the EPANET network and analysing the simulation results.
+
+tracker=https://gitlab.com/albertodeluca/qepanet/issues
+repository=https://gitlab.com/albertodeluca/qepanet
+# End of mandatory metadata
+
+# Recommended items:
+
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+tags=EPANET, hydraulics, hydraulic modelling
+
+homepage=https://gitlab.com/albertodeluca/qepanet
+category=Plugins
+icon=icon.png
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+

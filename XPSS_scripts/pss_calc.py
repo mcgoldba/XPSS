@@ -1,0 +1,423 @@
+from qgis.core import *
+import qgis.utils
+import sys
+import numpy as np
+import pandas as pd
+
+from qepanet.xylem_scripts.data_mod import PSSDataMod
+
+class PSSCalc:
+    
+    def __init__(self):
+        pass
+      
+    
+    def get_num_upstream_conn(self, C):
+        C = -1*C
+        print(str(C))
+        upstream_conn = np.sum(C, axis=1) + 1
+#        upstream_conn = np.zeros(len(C))
+#        for i in range(len(C)):
+#            for j in range(len(C)):
+#                if C[i][j] = -1:
+#                    upstream_conn[i] += 1
+        return upstream_conn
+    
+    
+    
+    def populate_edus(self, C, Pipe_props, sort_lst):
+        
+        Num_edu = np.zeros(len(C)) 
+        
+        # read edu value from qepanet
+        dataMod = PSSDataMod()
+        
+        #get "num_edu" field from qepanet
+        Pipe_props = dataMod.get_qepanet_edu_data(Pipe_props, sort_lst)
+        
+        num_edu = Pipe_props['Number of EDUs'].to_numpy(dtype='int') #number of edus from qepanet
+        
+        print(str(num_edu))
+        
+        for i in range(len(C)):
+            if not num_edu[sort_lst[i]]:  #if "num_edu" is not defined in qepanet 
+                Num_edu[i] = C[i][i]
+            else: # if "num_edu" is defined in qepanet
+                Num_edu[i] = C[i][i]*num_edu[sort_lst[i]]
+        
+        print("Num_edu: "+str(Num_edu))
+        
+        # initialize the "Accum_edu vector as the existing "Num_edu" vectors
+        Accum_edu = [0 for i in range(len(Num_edu))]
+            
+        for i in range(len(Num_edu)):
+            Accum_edu[i] = Num_edu[i]
+        
+        print(" ")
+        print("Num_edu: "+str(Num_edu))
+        print("Accum_edu: "+str(Accum_edu))
+        
+        Accum_edu[len(Accum_edu)-1] = 1  #the last item in the ordered list should always be a end branch with 1 EDU
+        
+        for i in range(1,len(Num_edu)):
+            row = C[len(Num_edu)-i-1]  #iterate from the last row of the matrix up to the first
+            Accum_edu[len(Num_edu)-i-1] = np.dot(row,Accum_edu)
+            print(" ")
+            print("Num_edu: "+str(Num_edu))
+            print("Accum_edu: "+str(Accum_edu))
+        
+        #create unsorted arrays of Accum and Num edus for pandas array
+        Accum_edu_unsort = [ 0 for i in range(len(Accum_edu))]
+        Num_edu_unsort = [ 0 for i in range(len(Num_edu))]
+        
+        for i in range(len(Num_edu)):
+            Accum_edu_unsort[sort_lst[i]] = Accum_edu[i]
+            Num_edu_unsort[sort_lst[i]] = Num_edu[i]
+        
+        #remove the "Number of EDUs" row that was generated from 'get_qepanet_edu_data()'
+        Pipe_props = Pipe_props.drop(columns=["Number of EDUs"])
+        
+        Pipe_props = self.append_col_to_table(Pipe_props, Num_edu_unsort, ['Number of EDUs'], data_type='int')
+
+        Pipe_props = self.append_col_to_table(Pipe_props, Accum_edu_unsort, ['Number Accumulated EDUs'], data_type='int')
+        
+        return Pipe_props
+        
+    
+    def get_num_edu(self, C, Pipe_props):
+        #upstream_conn = vector of the number of upstream connections for each pipe
+        
+        Num_edu = np.zeros(len(C)) 
+        for i in range(len(C)):
+            Num_edu[i] = C[i][i]
+
+    
+        Pipe_props = self.append_col_to_table(Pipe_props, Num_edu, ['Number of EDUs'], data_type='int')
+        
+#        df = pd.DataFrame(data=Num_edu, columns=['Number of EDUs'], dtype='int')
+#        
+#        df.reset_index(drop=True, inplace=True)
+#        Pipe_props.reset_index(drop=True, inplace=True)
+#    
+#        Pipe_props = pd.concat([Pipe_props, df], axis=1)
+#        
+        return Pipe_props
+    
+    def get_accum_edu(self, C, Pipe_props):
+        #C = Connection matrix
+        
+        #initialize the vector to all zeros
+        Num_edu = Pipe_props.iloc[:,Pipe_props.columns.get_loc('Number of EDUs')].to_numpy(dtype='int') 
+        
+        Accum_edu = [0 for i in range(len(Num_edu))]
+        
+        for i in range(len(Num_edu)):
+            Accum_edu[i] = Num_edu[i] # initialize the "Accum_edu vector as the existing "Num_edu" vectors
+        
+        for i in range(len(Num_edu)):
+            row = C[len(Num_edu)-i-1]  #iterate from the last row of the matrix up to the first
+            Accum_edu[len(Num_edu)-i-1] = np.dot(row,Accum_edu)
+            
+        
+        Pipe_props = self.append_col_to_table(Pipe_props, Accum_edu, ['Number Accumulated EDUs'], data_type='int')
+        
+#        df = pd.DataFrame(data=Accum_edu, columns=['Number Accumulated EDUs'], dtype='int')
+#    
+#        df.reset_index(drop=True, inplace=True)
+#        Pipe_props.reset_index(drop=True, inplace=True)
+#    
+#        Pipe_props = pd.concat([Pipe_props, df], axis=1)
+        
+        return Pipe_props
+        
+        #check to see that every pipe within the connection matrix has been evaluated
+        
+
+    def get_flow_gen(self, Pipe_props, p_flow):
+        
+        Op_edu = Pipe_props.iloc[:,Pipe_props.columns.get_loc('Accumlated Operating EDUs')].to_numpy() 
+        
+        Flow_gen = np.multiply(p_flow,Op_edu)
+        
+        df = pd.DataFrame(data=Flow_gen, columns=['Max Flowrate [gpm]'], dtype='float')
+        
+        df.reset_index(drop=True, inplace=True)
+        Pipe_props.reset_index(drop=True, inplace=True)
+    
+        Pipe_props = pd.concat([Pipe_props, df], axis=1)
+        
+        return Pipe_props
+        
+    def get_accum_flow(self, C, Pipe_props):
+        
+        Accum_flow = self.get_accum_edu(C, Flow_gen)
+        return Accum_flow
+        
+    def get_pipe_dia(self, Pipe_props, l_table, l_material, v_min, v_max):
+        # l_table =  pandas table imported from csv file
+        
+        Accum_flow = Pipe_props.iloc[:,Pipe_props.columns.get_loc('Max Flowrate [gpm]')].to_numpy() 
+        # verify that a valid pipe material was specified
+        materials = l_table['Material'].unique().tolist()
+        #print(str(materials))
+        error = True
+        for i in range(len(materials)):
+            if l_material == materials[i]:
+                error = False
+        if error:
+            raise Exception("ERROR:  Pipe material specified is not one of the available options: "+str(materials))
+
+        Pipe_dia = np.zeros(len(Accum_flow)) 
+        Pipe_v = np.zeros(len(Accum_flow))
+                            
+        # populate the list of nominal diameters
+        l_table_sp = l_table.loc[l_table['Material'] == l_material]  # The pipe table that is specific to the selected material
+        
+        nom_dia = pd.to_numeric(l_table_sp["Nominal Diameter [in]"]).tolist()
+        in_dia = pd.to_numeric(l_table_sp["Actual ID [in]"]).tolist()
+        
+        for p in range(len(Accum_flow)):
+            i = 0
+            v = self.convert_gpm_to_ft3_per_s(Accum_flow[p]) / self.calc_pipe_area(in_dia[i])
+            while v > v_max:
+                i += 1
+                if (i > len(in_dia)-1):
+                    raise Exception("ERROR:  Pipe velocity is too large for the available diameters.")
+                v = self.convert_gpm_to_ft3_per_s(Accum_flow[p]) / self.calc_pipe_area(in_dia[i])
+            if v < v_min:
+                raise Exception("ERROR: a suitable pipe diameter ccannot be found for a pipe")
+            Pipe_dia[p] = nom_dia[i]
+            Pipe_v[p] = v
+        
+        df = pd.DataFrame(data=Pipe_dia, columns=['Diameter [in]'], dtype='float')
+        
+        df.reset_index(drop=True, inplace=True)
+        Pipe_props.reset_index(drop=True, inplace=True)
+    
+        Pipe_props = pd.concat([Pipe_props, df], axis=1)
+        
+        df = pd.DataFrame(data=Pipe_v, columns=['Max Velocity [ft/s]'], dtype='float')
+        
+        df.reset_index(drop=True, inplace=True)
+        Pipe_props.reset_index(drop=True, inplace=True)
+    
+        Pipe_props = pd.concat([Pipe_props, df], axis=1)
+        
+        return Pipe_props
+            
+    def convert_gpm_to_ft3_per_s(self, gpm):
+        ftc = gpm*0.002228009
+        
+        return ftc
+    
+    def convert_ft3_per_s_to_gpm(self, ftc):
+        gpm = ftc*448.8312211
+        
+        return gpm
+    
+    def calc_pipe_area(self, d):
+        area = np.pi*d*d/144.0/4
+        return area
+    
+
+    def ft_per_s_to_gpm(self, v, d):
+        #v = pipe velocity in ft/s
+        #d = actual pipe S in inches 
+        
+        A = np.pi*d*d/4.0/144.0 #Pipe area [ft2]
+        flow = v*A  #flowrate in [ft3/s]
+        gpm = self.convert_ft3_per_s_to_gpm(flow)
+        
+        return gpm
+        
+
+    def get_op_edu_epa(self, Pipe_props, A, B, p_flow):
+        
+        Accum_edu = Pipe_props.iloc[:,Pipe_props.columns.get_loc('Number Accumulated EDUs')].to_numpy()
+        
+        Op_edu = []
+        
+        for i in range(len(Accum_edu)):
+            if Accum_edu[i] == 1:
+                Op_edu.append(1)
+            else:
+                Op_edu.append(np.ceil(A*Accum_edu[i]+20 / p_flow))
+        
+        df = pd.DataFrame(data=Op_edu, columns=['Accumlated Operating EDUs'], dtype='int')
+        
+        df.reset_index(drop=True, inplace=True)
+        Pipe_props.reset_index(drop=True, inplace=True)
+    
+        Pipe_props = pd.concat([Pipe_props, df], axis=1)
+        
+        return Pipe_props
+    
+    def get_op_edu_gpd(self):
+        pass
+    
+    def get_op_edu_table(self):
+        pass
+    
+    
+    def calc_pipe_loss_hazwil(self, Pipe_props, l_dia_table, l_material, l_C_table):
+        #extract pipe velocity from "Pipe_props" in [ft/s]
+        v = Pipe_props['Max Velocity [ft/s]']
+        #v = v.transpose()
+        v = v.to_numpy(dtype='float')
+        #v = np.vstack(v[0])
+        #extract actual ID in [in]
+        dia_nom = Pipe_props[['Diameter [in]']]
+        print(str(dia_nom))
+        dia = l_dia_table[l_dia_table['Material'] == l_material]
+        dia_nom = dia_nom.merge(dia, how='left', left_on='Diameter [in]', right_on='Nominal Diameter [in]')
+        dia = dia_nom['Actual ID [in]']
+        #dia = pd.to_numeric(dia)
+        #dia = dia.transpose()
+        dia = dia.to_numpy(dtype='float')
+        #dia = np.vstack(dia[0])
+        
+        #calculate flowrate in [gpm]
+        Q = self.ft_per_s_to_gpm(v,dia)
+        #extract pipe length in [ft]
+        L = Pipe_props['Length [ft]']
+        #L = L.transpose()
+        L = L.to_numpy(dtype='float')
+        print(str(L))
+        #L = L[0]
+        
+        #get C value
+        C = l_C_table.loc[l_material,'C Factor']
+        
+        #print('Velocity: '+str(v))
+        #print('Flow: '+str(Q))
+        #print(str(Q[0][0]))
+        #print('Diameter: '+str(dia))
+        #print('Length: '+str(L))
+        
+        hl_f = [0.0 for i in range(len(Q))]
+        print(str(hl_f))
+        hl = [0.0 for i in range(len(Q))]
+        
+        #Calculate total headloss in [ft]
+        for i in range(len(hl_f)):
+            hl_f[i] = (0.2083*((100.0/C)**1.85)*(Q[i]**1.85))/(dia[i]**4.8655)
+            print(str(hl_f))
+            #Calculate headloss per 100 ft
+            hl[i] = hl_f[i]*L[i]/100.0
+        
+        #append to pandas dataframe
+        df = pd.DataFrame(data=hl_f, columns=['Friction Loss Factor [ft/100ft]'])
+        
+        df.reset_index(drop=True, inplace=True)
+        Pipe_props.reset_index(drop=True, inplace=True)
+    
+        Pipe_props = pd.concat([Pipe_props, df], axis=1)
+        
+        df = pd.DataFrame(data=hl, columns=['Friction Loss [ft]'], dtype='float')
+        
+        df.reset_index(drop=True, inplace=True)
+        Pipe_props.reset_index(drop=True, inplace=True)
+    
+        Pipe_props = pd.concat([Pipe_props, df], axis=1)
+        
+        return [Pipe_props, C]
+    
+    def get_accum_loss(self, Pipe_props):
+        Pipe_id = Pipe_props['Pipe ID'].to_numpy()
+        Conn = Pipe_props['Downstream Connected Pipe'].to_numpy()
+        Loss = Pipe_props['Friction Loss [ft]'].to_numpy()
+        
+        Accum_loss = [0.0 for i in range(len(Pipe_id))]
+        
+        for i in range(len(Pipe_id)):
+            #get info on connected pipe:
+            loss = 0
+            for j in range(len(Conn)):
+                if Pipe_id[j][0] == Conn[i][0]:
+                    loss = Accum_loss[j]
+                    break
+            Accum_loss[i] = Loss[i]+loss
+        
+        Pipe_props = self.append_col_to_table(Pipe_props, Accum_loss, ['Accumulated Friction Loss [ft]'])
+        
+        return Pipe_props
+    
+    def append_col_to_table(self, Pipe_props, col, title, data_type=False, sort=False):
+        if data_type:
+            df = pd.DataFrame(data=col, columns=title, dtype=data_type)
+        else:
+            df = pd.DataFrame(data=col, columns=title)
+            
+        if sort:
+            df = df.reindex(index=sort)  #rearrange the pipes within the pandas dataframe to be sorted from the Reservoir upstream
+
+        
+        df.reset_index(drop=True, inplace=True)
+        Pipe_props.reset_index(drop=True, inplace=True)
+    
+        Pipe_props = pd.concat([Pipe_props, df], axis=1)
+        
+        return Pipe_props 
+        
+    def get_TDH(self, Pipe_props):
+        
+        TDH = []
+        
+        for i in range(len(Pipe_props.index)):
+            pipe_TDH = Pipe_props.iloc[i]['Accumulated Friction Loss [ft]'] + Pipe_props.iloc[i]['Static Head [ft]'] 
+            TDH.append(pipe_TDH)
+            
+        Pipe_props = self.append_col_to_table(Pipe_props, TDH, ['Total Dynamic Head [ft]'], data_type='float')
+            
+        return Pipe_props
+    
+    def populate_edus_from_qepa(self, C, Pipe_props, sort_lst):
+        
+        dataMod = PSSDataMod()
+        
+        #get "num_edu" field from qepanet
+        Pipe_props = dataMod.get_qepanet_edu_data(Pipe_props, sort_lst)
+    
+        #modify qepanet field based on connection matrix to zero out EDUs for pipes that are not end nodes
+        
+        #get num_edu array
+        num_edu = Pipe_props['Number of EDUs'].to_numpy(dtype='int')
+        
+        #get connection matrix array
+        C_edu = [0 for i in range(len(C))]
+        
+        for i in range(len(C)):
+            C_edu[i] = C[i][i]
+        
+        #replace the "Number of EDUs" column data
+        Pipe_props['Number of EDUs'] = Pipe_props['Number of EDUs'].replace(np.multiply(C_edu,num_edu))
+        
+        return Pipe_props
+    
+    def get_calc_stats(self, Pipe_props):
+        
+        Vel = Pipe_props['Max Velocity [ft/s]'].tolist()
+        
+        min_v = min(Vel)
+        max_v = max(Vel)
+        
+        TDH = Pipe_props['Total Dynamic Head [ft]'].tolist()
+        max_tdh = max(TDH)
+        
+        Dia = Pipe_props["Diameter [in]"].tolist()
+        max_d = max(Dia)
+        
+        Num_edu = Pipe_props["Number Accumulated EDUs"].tolist()
+        num_edu = max(Num_edu)
+        
+        stats = {'Min Velocity [ft/s]': [min_v], 'Max Velocity [ft/s]': [max_v], 'Max Total Dynamic Head [ft]': [max_tdh], 'Max Diameter [in]': [max_d], 'Total Number EDUs': [num_edu]}
+        
+        index = [0]
+        
+        Calc_stats = pd.DataFrame(stats, index=index)
+        
+        
+        return Calc_stats
+    
+
+    
