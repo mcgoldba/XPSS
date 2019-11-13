@@ -1,17 +1,22 @@
+from __future__ import absolute_import
+from builtins import str
+from builtins import range
+from builtins import object
 import codecs
 import os
 
-from network import *
-from qgis.core import NULL
-from system_ops import Controls, Curve, Demand, Energy, Pattern, Rule, Status
+from .network import Title, Junction, Reservoir, Tank, Pipe, Pump, Valve, Emitter, Coordinate, Tag, QJunction,\
+    QReservoir, QTank, QPipe, Vertex, QOptions, QVertices
+from qgis.core import NULL, QgsSpatialIndex, QgsVertexId
+from .system_ops import Controls, Curve, Demand, Energy, Pattern, Rule, Status
 import math
 from ..model.options_report import Times, Report
-from options_report import Options, Quality
+from .options_report import Options, Quality
 from ..model.network_handling import NetworkUtils
 from ..model.water_quality import Reactions
 
 
-class InpFile:
+class InpFile(object):
     
     pad_19 = 19
     pad_22 = 22
@@ -128,7 +133,7 @@ class InpFile:
 
                         curve_type = 0
                         cruve_desc = None
-                        for type_id, type_name in Curve.type_names.iteritems():
+                        for type_id, type_name in Curve.type_names.items():
                             if curve_metadata.lower()[1:].startswith(type_name.lower()):
                                 curve_type = type_id
                                 curve_metadatas = curve_metadata.split(':')
@@ -301,7 +306,7 @@ class InpFile:
         out.extend(InpFile.build_section_keyword(Curve.section_name))
         out.append(InpFile.build_section_header(Curve.section_header))
 
-        for curve in params.curves.itervalues():
+        for curve in params.curves.values():
 
             type_desc = None
             if curve.type is not None:
@@ -341,7 +346,7 @@ class InpFile:
         j_fts = params.junctions_vlay.getFeatures()
         for j_ft in j_fts:
             eid = j_ft.attribute(Junction.field_name_eid)
-            emitter_coeff = j_ft.attribute(Junction.field_name_emitter_coeff)
+            emitter_coeff = float(j_ft.attribute(Junction.field_name_emitter_coeff))
             if emitter_coeff is not None and emitter_coeff != NULL and emitter_coeff != '':
                 line = InpFile.pad(eid, InpFile.pad_19)
                 line += InpFile.pad('{0:.2f}'.format(emitter_coeff))
@@ -356,13 +361,13 @@ class InpFile:
 
         for j_ft in j_fts:
             eid = j_ft.attribute(Junction.field_name_eid)
-            demand = j_ft.attribute(Junction.field_name_demand)
-            elev = j_ft.attribute(Junction.field_name_elev)
-            delta_z = j_ft.attribute(Junction.field_name_delta_z)
+            demand = float(j_ft.attribute(Junction.field_name_demand))
+            elev = float(j_ft.attribute(Junction.field_name_elev))
+            delta_z = float(j_ft.attribute(Junction.field_name_delta_z))
             pattern = j_ft.attribute(Junction.field_name_pattern)
             description = j_ft.attribute(Junction.field_name_description)
             tag_name = j_ft.attribute(Junction.field_name_tag)
-            zone_end = j_ft.attribute(Junction.field_name_zone_end)
+            zone_end = int(j_ft.attribute(Junction.field_name_zone_end))
 
 
             if pattern == NULL:
@@ -378,15 +383,17 @@ class InpFile:
                 self.tags.append(Tag(Tag.element_type_node, eid, tag_name))
     
             if zone_end is None or zone_end == NULL:
-                zone_end = -1
+                zone_end = 0
     
             elev += delta_z
-
+            
+            #print("elev: ", type(elev))
+            
             # Line
             line = InpFile.pad(eid, InpFile.pad_19)
             line += InpFile.pad('{0:.2f}'.format(elev))
             if demand is not None:
-                line += InpFile.pad('{0:.5f}'.format(demand))
+                line += InpFile.pad('{0:.2f}'.format(demand))
             else:
                 line += InpFile.pad('')
 
@@ -473,7 +480,7 @@ class InpFile:
         out.extend(InpFile.build_section_keyword(Pattern.section_name))
         out.append(InpFile.build_section_header(Pattern.section_header))
 
-        for pattern in params.patterns.itervalues():
+        for pattern in params.patterns.values():
             if pattern.desc is not None:
                 out.extend(InpFile.build_comment(pattern.desc))
 
@@ -497,16 +504,15 @@ class InpFile:
             sindex.insertFeature(feat)
         for feat in params.tanks_vlay.getFeatures():
             sindex.insertFeature(feat)
-        
+
         for pipe_ft in pipe_fts:
 
             eid = pipe_ft.attribute(Pipe.field_name_eid)
-            print(eid)
 
             # Find start/end nodes
             # adj_nodes = NetworkUtils.find_start_end_nodes(params, pipe_ft.geometry())
             adj_nodes = NetworkUtils.find_start_end_nodes_sindex(params, sindex, pipe_ft.geometry())
-            
+
             start_node_id = adj_nodes[0].attribute(Junction.field_name_eid)
             end_node_id = adj_nodes[1].attribute(Junction.field_name_eid)
 
@@ -517,8 +523,8 @@ class InpFile:
             status = pipe_ft.attribute(Pipe.field_name_status)
             description = pipe_ft.attribute(Pipe.field_name_description)
             tag_name = pipe_ft.attribute(Pipe.field_name_tag)
-            num_edu = pipe_ft.attribute(Pipe.field_name_num_edu)
-            zone_id = pipe_ft.attribute(Pipe.field_name_zone_id)
+            num_edu = int(pipe_ft.attribute(Pipe.field_name_num_edu))
+            zone_id = int(pipe_ft.attribute(Pipe.field_name_zone_id))
 
 
             # Line
@@ -560,7 +566,7 @@ class InpFile:
                 else:
                     line += InpFile.pad(zone_id, InpFile.pad_19)
             else:
-                zone_id = -1
+                zone_id = 0
 
     
             
@@ -737,8 +743,8 @@ class InpFile:
             eid = t_ft.attribute(Tank.field_name_eid)
             curve = t_ft.attribute(Tank.field_name_curve)
             diameter = t_ft.attribute(Tank.field_name_diameter)
-            elev = t_ft.attribute(Tank.field_name_elev)
-            deltaz = t_ft.attribute(Tank.field_name_delta_z)
+            elev = float(t_ft.attribute(Tank.field_name_elev))
+            deltaz = float(t_ft.attribute(Tank.field_name_delta_z))
             level_init = t_ft.attribute(Tank.field_name_level_init)
             level_max = t_ft.attribute(Tank.field_name_level_max)
             level_min = t_ft.attribute(Tank.field_name_level_min)
@@ -864,14 +870,19 @@ class InpFile:
         j_fts = params.junctions_vlay.getFeatures()
         for j_ft in j_fts:
             eid = j_ft.attribute(Junction.field_name_eid)
-            delta_z = j_ft.attribute(Junction.field_name_delta_z)
-            zone_end = j_ft.attribute(Junction.field_name_zone_end)
+            delta_z = float(j_ft.attribute(Junction.field_name_delta_z))
+            zone_end = int(j_ft.attribute(Junction.field_name_zone_end))
+            pressure = float(j_ft.attribute(Junction.field_name_pressure))
             if zone_end == NULL:
-                zone_end == 0
+                zone_end = 0
+            if pressure == NULL:
+                pressure = 0
+            
             # Line
             line = InpFile.pad(eid, InpFile.pad_19)
             line += InpFile.pad('{0:.2f}'.format(delta_z), InpFile.pad_19)
-            line += InpFile.pad(str(zone_end))
+            line += InpFile.pad("{:.0f}".format(zone_end), InpFile.pad_19)
+            line += InpFile.pad("{:.2f}".format(pressure))
             
 
             out.append(line)
@@ -883,12 +894,12 @@ class InpFile:
         j_fts = params.reservoirs_vlay.getFeatures()
         for j_ft in j_fts:
             eid = j_ft.attribute(Reservoir.field_name_eid)
-            delta_z = j_ft.attribute(Reservoir.field_name_delta_z)
+            delta_z = float(j_ft.attribute(Reservoir.field_name_delta_z))
             pressure_head = j_ft.attribute(Reservoir.field_name_pressure_head)
 
             # Line
             line = InpFile.pad(eid, InpFile.pad_19)
-            line += InpFile.pad('{0:.2f}'.format(delta_z), InpFile.pad_19)
+            line += InpFile.pad('{0:.2f}'.format(delta_z))
             line += InpFile.pad('{0:.2f}'.format(pressure_head))
 
             out.append(line)
@@ -916,21 +927,31 @@ class InpFile:
         for p_ft in p_fts:
             eid = p_ft.attribute(Pipe.field_name_eid)
             material = p_ft.attribute(Pipe.field_name_material)
-            num_edu = p_ft.attribute(Pipe.field_name_num_edu)
+            num_edu = int(p_ft.attribute(Pipe.field_name_num_edu))
             # print 'material', material, type(material)
-            zone_id = p_ft.attribute(Pipe.field_name_zone_id)
+            zone_id = int(p_ft.attribute(Pipe.field_name_zone_id))
+            velocity = float(p_ft.attribute(Pipe.field_name_velocity))
+            frictionloss = float(p_ft.attribute(Pipe.field_name_frictionloss))
+            
             if material == NULL:
                 material = ''
             if num_edu == NULL:
                 num_edu == 0
             if zone_id == NULL:
                 zone_id == 0
+            if velocity == NULL:
+                velocity = 0
+            if frictionloss == NULL:
+                frictionloss = 0
+            
 
             # Line
             line = InpFile.pad(eid, InpFile.pad_19)
             line += InpFile.pad(material, InpFile.pad_19)
-            line += InpFile.pad(str(num_edu), InpFile.pad_19)
-            line += InpFile.pad(str(zone_id))
+            line += InpFile.pad("{:.0f}".format(num_edu), InpFile.pad_19)
+            line += InpFile.pad("{:.0f}".format(zone_id), InpFile.pad_19)
+            line += InpFile.pad("{:.2f}".format(velocity), InpFile.pad_19)
+            line += InpFile.pad("{:.2f}".format(frictionloss))
 
             out.append(line)
 
@@ -939,7 +960,7 @@ class InpFile:
 
         for p_ft in params.pipes_vlay.getFeatures():
             eid = p_ft.attribute(Pipe.field_name_eid)
-            geom_v2 = p_ft.geometry().geometry()
+            geom_v2 = p_ft.geometry().get()
 
             if geom_v2.vertexCount() > 2:
 

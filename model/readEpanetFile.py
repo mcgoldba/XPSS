@@ -1,5 +1,6 @@
 # From https://plugins.qgis.org/plugins/ImportEpanetInpFiles/
 
+from builtins import range
 import re
 
 def LoadFile(inp):
@@ -18,12 +19,12 @@ def BinUpdateClass():
 
 ## get Info
 def getBinNodeReservoirIndex():
-    ind = range(getBinNodeJunctionCount() + 1, getBinNodeJunctionCount() + getBinNodeReservoirCount() + 1)
+    ind = list(range(getBinNodeJunctionCount() + 1, getBinNodeJunctionCount() + getBinNodeReservoirCount() + 1))
     return ind
 
 
 def getBinNodeTankIndex():
-    ind = range(getBinNodeJunctionCount() + getBinNodeReservoirCount() + 1, getBinNodeCount() + 1)
+    ind = list(range(getBinNodeJunctionCount() + getBinNodeReservoirCount() + 1, getBinNodeCount() + 1))
     return ind
 
 

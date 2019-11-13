@@ -1,10 +1,12 @@
-from PyQt4.QtGui import QDialog, QFormLayout, QLabel, QComboBox, QLineEdit, QCheckBox, QPushButton, QFrame, QHBoxLayout,\
-    QMessageBox, QFileDialog, QVBoxLayout
-from PyQt4 import QtCore
+from __future__ import absolute_import
+from builtins import str
+from builtins import range
+from qgis.PyQt.QtWidgets import QDialog, QFormLayout, QLabel, QComboBox, QLineEdit, QCheckBox, QPushButton, QFrame, QHBoxLayout, QMessageBox, QFileDialog, QVBoxLayout
+from qgis.PyQt import QtCore
 from ..tools.parameters import Parameters, RegExValidators
 from ..model.network import Valve
 from ..model.options_report import Hour, Report, Times, Options
-from utils import prepare_label as pre_l
+from .utils import prepare_label as pre_l
 import os
 
 min_width = 200
@@ -57,9 +59,9 @@ class HydraulicsDialog(QDialog):
         self.txt_viscosity = QLineEdit()
         fra_form_lay.addRow(self.lbl_viscosity, self.txt_viscosity)
 
-        self.lbl_diffusivity = QLabel('Diffusivity:')  # TODO: softocode
-        self.txt_diffusivity = QLineEdit()
-        fra_form_lay.addRow(self.lbl_diffusivity, self.txt_diffusivity)
+        # self.lbl_diffusivity = QLabel('Diffusivity:')  # TODO: softocode
+        # self.txt_diffusivity = QLineEdit()
+        # fra_form_lay.addRow(self.lbl_diffusivity, self.txt_diffusivity)
 
         self.lbl_spec_gravity = QLabel('Specific gravity:')  # TODO: softocode
         self.txt_spec_gravity = QLineEdit()
@@ -128,7 +130,7 @@ class HydraulicsDialog(QDialog):
         self.cbo_units.activated.connect(self.cbo_units_activated)
         # self.cbo_flow_units.activated.connect(self.cbo_flow_units_activated)
 
-        for key, value in self.params.options.headlosses_text.iteritems():
+        for key, value in self.params.options.headlosses_text.items():
             self.cbo_headloss.addItem(value, key)
 
         self.cbo_headloss.activated.connect(self.cbo_headloss_activated)
@@ -144,7 +146,7 @@ class HydraulicsDialog(QDialog):
         self.txt_hydraulics_file.setReadOnly(True)
 
         # - Unbalanced
-        for id, text in self.params.options.unbalanced.unb_text.iteritems():
+        for id, text in self.params.options.unbalanced.unb_text.items():
             self.cbo_unbalanced.addItem(text, id)
 
         self.cbo_unbalanced.activated.connect(self.cbo_unbalanced_changed)
@@ -153,7 +155,7 @@ class HydraulicsDialog(QDialog):
 
         # - Pattern
         self.cbo_pattern.addItem('None (=1.0)', None)
-        for pattern_id, pattern in self.params.patterns.iteritems():
+        for pattern_id, pattern in self.params.patterns.items():
             self.cbo_pattern.addItem(pattern_id, pattern)
 
         # Buttons
@@ -162,7 +164,6 @@ class HydraulicsDialog(QDialog):
 
         # Validators
         self.txt_viscosity.setValidator(RegExValidators.get_pos_decimals())
-        self.txt_diffusivity.setValidator(RegExValidators.get_pos_decimals())
         self.txt_spec_gravity.setValidator(RegExValidators.get_pos_decimals())
         self.txt_max_trials.setValidator(RegExValidators.get_pos_int_no_zero())
         self.txt_accuracy.setValidator(RegExValidators.get_pos_decimals())
@@ -188,7 +189,6 @@ class HydraulicsDialog(QDialog):
             self.txt_hydraulics_file.setText(self.params.options.hydraulics.file)
 
         self.txt_viscosity.setText(str(self.params.options.viscosity))
-        self.txt_diffusivity.setText(str(self.params.options.diffusivity))
         self.txt_spec_gravity.setText(str(self.params.options.spec_gravity))
         self.txt_max_trials.setText(str(self.params.options.trials))
         self.txt_accuracy.setText(str(self.params.options.accuracy))
@@ -275,7 +275,7 @@ class HydraulicsDialog(QDialog):
             self.params.options.hydraulics.file = self.txt_hydraulics_file.text()
 
         self.params.options.viscosity = float(self.txt_viscosity.text())
-        self.params.options.diffusivity = float(self.txt_diffusivity.text())
+        # self.params.options.diffusivity = float(self.txt_diffusivity.text())
         self.params.options.spec_gravity = float(self.txt_spec_gravity.text())
         self.params.options.trials = float(self.txt_max_trials.text())
         self.params.options.accuracy = float(self.txt_accuracy.text())
@@ -392,9 +392,9 @@ class QualityDialog(QDialog):
         self.cbo_mass_units = QComboBox()
         fra_form_lay.addRow(self.lbl_mass_units, self.cbo_mass_units)
 
-        self.lbl_rel_diff = QLabel('Relative diffusivity:')  # TODO: softocode
-        self.txt_rel_diff = QLineEdit()
-        fra_form_lay.addRow(self.lbl_rel_diff, self.txt_rel_diff)
+        self.lbl_diffusivity = QLabel('Relative diffusivity:')  # TODO: softocode
+        self.txt_diffusivity = QLineEdit()
+        fra_form_lay.addRow(self.lbl_diffusivity, self.txt_diffusivity)
 
         self.lbl_trace_node = QLabel('Trace node:')  # TODO: softocode
         self.txt_trace_node = QLineEdit()
@@ -421,10 +421,10 @@ class QualityDialog(QDialog):
         self.setup()
 
     def setup(self):
-        for key, value in self.params.options.quality.quality_text.iteritems():
+        for key, value in self.params.options.quality.quality_text.items():
             self.cbo_parameter.addItem(value, key)
 
-        for key, value in self.params.options.quality.quality_units_text.iteritems():
+        for key, value in self.params.options.quality.quality_units_text.items():
             self.cbo_mass_units.addItem(value, key)
 
         # Buttons
@@ -432,7 +432,7 @@ class QualityDialog(QDialog):
         self.btn_Ok.clicked.connect(self.btn_ok_clicked)
 
         # Validators
-        self.txt_rel_diff.setValidator(RegExValidators.get_pos_decimals())
+        self.txt_diffusivity.setValidator(RegExValidators.get_pos_decimals())
         self.txt_quality_tol.setValidator(RegExValidators.get_pos_decimals())
 
     def show(self):
@@ -440,7 +440,7 @@ class QualityDialog(QDialog):
 
         self.cbo_parameter.setCurrentIndex(self.cbo_parameter.findData(self.params.options.quality.parameter))
         self.cbo_mass_units.setCurrentIndex(self.cbo_mass_units.findData(self.params.options.quality.mass_units))
-        self.txt_rel_diff.setText(str(self.params.options.quality.relative_diff))
+        self.txt_diffusivity.setText(str(self.params.options.diffusivity))
         self.txt_trace_node.setText(str(self.params.options.quality.trace_junction_id))
         self.txt_quality_tol.setText(str(self.params.options.quality.quality_tol))
 
@@ -453,7 +453,7 @@ class QualityDialog(QDialog):
         self.params.options.quality.parameter = self.cbo_parameter.itemData(self.cbo_parameter.currentIndex())
         self.params.options.quality.mass_units = self.cbo_mass_units.itemData(self.cbo_mass_units.currentIndex())
 
-        self.params.options.quality.relative_diff = float(self.txt_rel_diff.text())
+        self.params.options.diffusivity = float(self.txt_diffusivity.text())
         self.params.options.quality.trace_junction_id = self.txt_trace_node.text()
         self.params.options.quality.quality_tol = float(self.txt_quality_tol.text())
 
@@ -646,7 +646,7 @@ class TimesDialog(QDialog):
 
     def setup(self):
 
-        for key, text in self.params.times.unit_text.iteritems():
+        for key, text in self.params.times.unit_text.items():
             self.cbo_units.addItem(text, key)
 
         # Buttons
@@ -683,13 +683,13 @@ class TimesDialog(QDialog):
         self.txt_clock_time_start.setInputMask('09:99')
         self.txt_clock_time_start.setValidator(RegExValidators.get_time_hh_mm())
 
-        for key, text in self.params.times.stats_text.iteritems():
+        for key, text in self.params.times.stats_text.items():
             self.cbo_statistic.addItem(text, key)
 
     def show(self):
         super(TimesDialog, self).show()
 
-        self.cbo_units.setCurrentIndex(self.cbo_units.findData(self.params.times.units))
+        # self.cbo_units.setCurrentIndex(self.cbo_units.findData(self.params.times.units))
         self.txt_duration.setText(self.params.times.duration.get_as_text(4))
         self.txt_hydraulic_timestep.setText(self.params.times.hydraulic_timestep.get_as_text(3))
         self.txt_quality_timestep.setText(self.params.times.quality_timestep.get_as_text(3))
@@ -707,7 +707,7 @@ class TimesDialog(QDialog):
     def btn_ok_clicked(self):
 
         # Update parameters and options
-        self.params.times.units = self.cbo_units.itemData(self.cbo_units.currentIndex())
+        # self.params.times.units = self.cbo_units.itemData(self.cbo_units.currentIndex())
         self.params.times.duration = Hour.from_string(self.txt_duration.text())
         self.params.times.hydraulic_timestep = Hour.from_string(self.txt_hydraulic_timestep.text())
         self.params.times.quality_timestep = Hour.from_string(self.txt_quality_timestep.text())
@@ -869,19 +869,19 @@ class ReportDialog(QDialog):
     def setup(self):
 
         # Combos
-        for key, value in Report.status_names.iteritems():
+        for key, value in Report.status_names.items():
             self.cbo_status.addItem(value, key)
 
-        for key, value in Report.summary_names.iteritems():
+        for key, value in Report.summary_names.items():
             self.cbo_summary.addItem(value, key)
 
-        for key, value in Report.energy_names.iteritems():
+        for key, value in Report.energy_names.items():
             self.cbo_energy.addItem(value, key)
 
-        for key, value in Report.nodes_names.iteritems():
+        for key, value in Report.nodes_names.items():
             self.cbo_nodes.addItem(value, key)
 
-        for key, value in Report.links_names.iteritems():
+        for key, value in Report.links_names.items():
             self.cbo_links.addItem(value, key)
 
         # Buttons

@@ -1,6 +1,5 @@
-from PyQt4.QtGui import *
-from PyQt4 import QtCore
-from PyQt4.QtCore import Qt
+from builtins import range
+from qgis.PyQt.QtWidgets import QDialog, QVBoxLayout, QFrame, QListWidget, QPushButton, QHBoxLayout, QDialogButtonBox, QListWidgetItem, QLineEdit, QLabel
 from ..tools.parameters import Parameters, RegExValidators
 
 

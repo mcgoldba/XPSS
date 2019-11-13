@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
+from builtins import range
 import sys
 import traceback
 
-from PyQt4.QtCore import Qt, QPoint
-from PyQt4.QtGui import QColor, QMenu
-from qgis.core import QgsPoint, QgsSnapper, QgsGeometry, QgsProject, QgsTolerance, QgsPointLocator, NULL
-from qgis.gui import QgsMapTool, QgsVertexMarker, QgsRubberBand, QgsMessageBar
+from qgis.PyQt.QtCore import Qt, QPoint
+from qgis.PyQt.QtGui import QColor
+from qgis.PyQt.QtWidgets import QMenu
+from qgis.core import QgsGeometry, QgsSnappingConfig, Qgis, NULL
+from qgis.gui import QgsMapTool, QgsVertexMarker, QgsRubberBand
 
 from ..model.network import Pipe, Junction
 from ..model.network_handling import LinkHandler, NodeHandler, NetworkUtils
-from parameters import Parameters
+from .parameters import Parameters
 from ..geo_utils import raster_utils, vector_utils
 from ..ui.section_editor import PipeSectionDialog
 from ..ui.diameter_dialog import DiameterDialog
@@ -110,7 +113,7 @@ class AddPipeTool(QgsMapTool):
                 pipe_band_geom = self.rubber_band.asGeometry()
 
                 # No rubber band geometry and feature snapped: pop the context menu
-                if pipe_band_geom is None and self.snapped_feat_id is not None:
+                if self.rubber_band.size() == 0 and self.snapped_feat_id is not None:
                     menu = QMenu()
                     section_action = menu.addAction('Section...')  # TODO: softcode
                     diameter_action = menu.addAction('Change diameter...')  # TODO: softcode
@@ -122,7 +125,7 @@ class AddPipeTool(QgsMapTool):
                             self.iface.messageBar().pushMessage(
                                 Parameters.plug_in_name,
                                 'No DEM selected. Cannot edit section.',
-                                QgsMessageBar.WARNING,
+                                Qgis.Warning,
                                 5)  # TODO: softcode
                         else:
                             # Check whether the pipe is all inside the DEM
@@ -133,7 +136,7 @@ class AddPipeTool(QgsMapTool):
                                     self.iface.messageBar().pushMessage(
                                         Parameters.plug_in_name,
                                         'Some pipe vertices fall outside of the DEM. Cannot edit section.',
-                                        QgsMessageBar.WARNING,
+                                        Qgis.Warning,
                                         5)  # TODO: softcode
                                     return
 
@@ -146,7 +149,7 @@ class AddPipeTool(QgsMapTool):
                                 self.iface.messageBar().pushMessage(
                                     Parameters.plug_in_name,
                                     'Missing elevation value in start or end node attributes. Cannot edit section.',
-                                    QgsMessageBar.WARNING,
+                                    Qgis.Warning,
                                     5)  # TODO: softcode
                                 return
 
@@ -177,18 +180,25 @@ class AddPipeTool(QgsMapTool):
                             self.iface.messageBar().pushMessage(
                                 Parameters.plug_in_name,
                                 'Valves detected on the pipe: need to update their diameters too.',
-                                QgsMessageBar.WARNING,
+                                Qgis.Warning,
                                 5)  # TODO: softcode
 
                     return
 
                 # There's a rubber band: create new pipe
                 if pipe_band_geom is not None:
+
                     # Finalize line
                     rubberband_pts = pipe_band_geom.asPolyline()[:-1]
+
+                    if len(rubberband_pts) == 0:
+                        self.iface.mapCanvas().refresh()
+                        return
+
                     rubberband_pts = self.remove_duplicated_point(rubberband_pts)
 
                     if len(rubberband_pts) < 2:
+                        self.rubber_band.reset()
                         return
 
                     # Check whether the pipe points are located on existing nodes
@@ -217,7 +227,10 @@ class AddPipeTool(QgsMapTool):
                         pipe_desc = self.data_dock.txt_pipe_desc.text()
                         pipe_tag = self.data_dock.cbo_pipe_tag.currentText()
                         num_edu = 1
-                        zone_id = -1
+                        zone_id = 0
+                        velocity = 0
+                        frictionloss = 0
+                        
 
                         pipe_ft = LinkHandler.create_new_pipe(
                             self.params,
@@ -232,13 +245,16 @@ class AddPipeTool(QgsMapTool):
                             pipe_desc,
                             pipe_tag,
                             num_edu,
-                            zone_id)
+                            zone_id,
+                            velocity,
+                            frictionloss)
                         self.rubber_band.reset()
 
                         new_pipes_fts.append(pipe_ft)
                         new_pipes_eids.append(pipe_eid)
 
                     emitter_coeff_s = self.data_dock.txt_junction_emit_coeff.text()
+                    
                     if emitter_coeff_s is None or emitter_coeff_s == '':
                         emitter_coeff = float(0)
                     else:
@@ -250,6 +266,10 @@ class AddPipeTool(QgsMapTool):
                     # Tag
                     junction_tag = self.data_dock.cbo_junction_tag.currentText()
 
+                    zone_end = 0
+                    pressure = 0
+
+                    
                     # Create start and end node, if they don't exist
                     (start_junction, end_junction) = NetworkUtils.find_start_end_nodes(self.params, new_pipes_fts[0].geometry())
                     new_start_junction = None
@@ -264,20 +284,19 @@ class AddPipeTool(QgsMapTool):
                                 self.iface.messageBar().pushMessage(
                                     Parameters.plug_in_name,
                                     'Elevation value not available: element elevation set to 0.',
-                                    QgsMessageBar.WARNING,
+                                    Qgis.Warning,
                                     5)  # TODO: softcode
                         deltaz = float(self.data_dock.txt_junction_deltaz.text())
                         j_demand = float(self.data_dock.txt_junction_demand.text())
-
+                        
                         pattern = self.data_dock.cbo_junction_pattern.itemData(
                             self.data_dock.cbo_junction_pattern.currentIndex())
                         if pattern is not None:
                             pattern_id = pattern.id
                         else:
                             pattern_id = None
-                        zone_end= -1  #ADDED:  default to a regular node when created
                         NodeHandler.create_new_junction(
-                            self.params, new_start_junction, junction_eid, elev, j_demand, deltaz, pattern_id, emitter_coeff, junction_desc, junction_tag, zone_end)
+                            self.params, new_start_junction, junction_eid, elev, j_demand, deltaz, pattern_id, emitter_coeff, junction_desc, junction_tag, zone_end, pressure)
 
                     (start_junction, end_junction) = NetworkUtils.find_start_end_nodes(self.params, new_pipes_fts[len(new_pipes_fts) - 1].geometry())
                     new_end_junction = None
@@ -292,7 +311,7 @@ class AddPipeTool(QgsMapTool):
                                 self.iface.messageBar().pushMessage(
                                     Parameters.plug_in_name,
                                     'Elevation value not available: element elevation set to 0.',
-                                    QgsMessageBar.WARNING,
+                                    Qgis.Warning,
                                     5)  # TODO: softcode
                         deltaz = float(self.data_dock.txt_junction_deltaz.text())
 
@@ -302,22 +321,23 @@ class AddPipeTool(QgsMapTool):
                             pattern_id = pattern.id
                         else:
                             pattern_id = None
-                        zone_end= -1 #ADDED:  default to a regular node when created
                         NodeHandler.create_new_junction(
-                            self.params, new_end_junction, junction_eid, elev, demand, deltaz, pattern_id, emitter_coeff, junction_desc, junction_tag, zone_end)
+                            self.params, new_end_junction, junction_eid, elev, demand, deltaz, pattern_id, emitter_coeff, junction_desc, junction_tag, zone_end, pressure)
 
                     # If end or start node intersects a pipe, split it
                     if new_start_junction:
                         for pipe_ft in self.params.pipes_vlay.getFeatures():
                             if pipe_ft.attribute(Pipe.field_name_eid) != new_pipes_eids[0] and\
-                                            pipe_ft.geometry().distance(QgsGeometry.fromPoint(new_start_junction)) < self.params.tolerance:
+                                            pipe_ft.geometry().distance(QgsGeometry.fromPointXY(new_start_junction)) < self.params.tolerance:
                                 LinkHandler.split_pipe(self.params, pipe_ft, new_start_junction)
 
                     if new_end_junction:
                         for pipe_ft in self.params.pipes_vlay.getFeatures():
                             if pipe_ft.attribute(Pipe.field_name_eid) != new_pipes_eids[-1] and\
-                                            pipe_ft.geometry().distance(QgsGeometry.fromPoint(new_end_junction)) < self.params.tolerance:
+                                            pipe_ft.geometry().distance(QgsGeometry.fromPointXY(new_end_junction)) < self.params.tolerance:
                                 LinkHandler.split_pipe(self.params, pipe_ft, new_end_junction)
+
+                self.iface.mapCanvas().refresh()
 
             # except Exception as e:
             #     self.rubber_band.reset()
@@ -340,31 +360,31 @@ class AddPipeTool(QgsMapTool):
 
     def deactivate(self):
 
-        QgsProject.instance().setSnapSettingsForLayer(self.params.junctions_vlay.id(),
-                                                      True,
-                                                      QgsSnapper.SnapToVertex,
-                                                      QgsTolerance.MapUnits,
-                                                      0,
-                                                      True)
-
-        QgsProject.instance().setSnapSettingsForLayer(self.params.reservoirs_vlay.id(),
-                                                      True,
-                                                      QgsSnapper.SnapToVertex,
-                                                      QgsTolerance.MapUnits,
-                                                      0,
-                                                      True)
-        QgsProject.instance().setSnapSettingsForLayer(self.params.tanks_vlay.id(),
-                                                      True,
-                                                      QgsSnapper.SnapToVertex,
-                                                      QgsTolerance.MapUnits,
-                                                      0,
-                                                      True)
-        QgsProject.instance().setSnapSettingsForLayer(self.params.pipes_vlay.id(),
-                                                      True,
-                                                      QgsSnapper.SnapToSegment,
-                                                      QgsTolerance.MapUnits,
-                                                      0,
-                                                      True)
+        # QgsProject.instance().setSnapSettingsForLayer(self.params.junctions_vlay.id(),
+        #                                               True,
+        #                                               QgsSnapper.SnapToVertex,
+        #                                               QgsTolerance.MapUnits,
+        #                                               0,
+        #                                               True)
+        #
+        # QgsProject.instance().setSnapSettingsForLayer(self.params.reservoirs_vlay.id(),
+        #                                               True,
+        #                                               QgsSnapper.SnapToVertex,
+        #                                               QgsTolerance.MapUnits,
+        #                                               0,
+        #                                               True)
+        # QgsProject.instance().setSnapSettingsForLayer(self.params.tanks_vlay.id(),
+        #                                               True,
+        #                                               QgsSnapper.SnapToVertex,
+        #                                               QgsTolerance.MapUnits,
+        #                                               0,
+        #                                               True)
+        # QgsProject.instance().setSnapSettingsForLayer(self.params.pipes_vlay.id(),
+        #                                               True,
+        #                                               QgsSnapper.SnapToSegment,
+        #                                               QgsTolerance.MapUnits,
+        #                                               0,
+        #                                               True)
 
         # self.rubber_band.reset()
         self.data_dock.btn_add_pipe.setChecked(False)
@@ -387,9 +407,8 @@ class AddPipeTool(QgsMapTool):
     def remove_duplicated_point(self, pts):
 
         # This is needed because the rubber band sometimes returns duplicated points
-
         purged_pts = [pts[0]]
-        for p in enumerate(range(len(pts) - 1), 1):
+        for p in enumerate(list(range(len(pts) - 1)), 1):
             if pts[p[0]] == pts[p[0]-1]:
                 continue
             else:
@@ -399,12 +418,13 @@ class AddPipeTool(QgsMapTool):
 
     def update_snapper(self):
         layers = {
-            self.params.junctions_vlay: QgsPointLocator.Vertex,
-            self.params.reservoirs_vlay: QgsPointLocator.Vertex,
-            self.params.tanks_vlay: QgsPointLocator.Vertex,
-            self.params.pipes_vlay: QgsPointLocator.All}
+            self.params.junctions_vlay: QgsSnappingConfig.Vertex,
+            self.params.reservoirs_vlay: QgsSnappingConfig.Vertex,
+            self.params.tanks_vlay: QgsSnappingConfig.Vertex,
+            self.params.pipes_vlay: QgsSnappingConfig.VertexAndSegment}
 
         self.snapper = NetworkUtils.set_up_snapper(layers, self.iface.mapCanvas(), self.params.snap_tolerance)
+        self.snapper.toggleEnabled()
 
     # Needed by Observable
     def update(self, observable):

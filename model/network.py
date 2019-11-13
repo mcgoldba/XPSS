@@ -1,9 +1,10 @@
+from builtins import object
 from collections import OrderedDict
-from qgis.core import *
-from PyQt4.QtCore import QVariant
+from qgis.core import QgsField
+from qgis.PyQt.QtCore import QVariant
 
 
-class Tables:
+class Tables(object):
 
     pipes_table_name = 'pipes'
     junctions_table_name = 'junctions'
@@ -16,14 +17,14 @@ class Tables:
         pass
 
 
-class Title:
+class Title(object):
     section_name = 'TITLE'
 
     def __init__(self, title):
         self.title = title
 
 
-class Node:
+class Node(object):
 
     field_name_eid = 'id'
     field_name_var = 'variable'
@@ -35,7 +36,7 @@ class Node:
         self.eid = eid
 
 
-class Junction:
+class Junction(object):
     section_name = 'JUNCTIONS'
     section_header = 'ID               	Elev      	Demand    	Pattern'
     field_name_eid = 'id'
@@ -47,6 +48,7 @@ class Junction:
     field_name_description = 'description'
     field_name_tag = 'tag'
     field_name_zone_end = 'zone_end'
+    field_name_pressure = 'pressure'
 
     prefix = 'J'
 
@@ -58,7 +60,8 @@ class Junction:
               QgsField(field_name_emitter_coeff, QVariant.Double),
               QgsField(field_name_description, QVariant.String),
               QgsField(field_name_tag, QVariant.String),
-              QgsField(field_name_zone_end, QVariant.String)]
+              QgsField(field_name_zone_end, QVariant.Int),
+              QgsField(field_name_pressure, QVariant.Double)]
 
 
     def __init__(self, eid):
@@ -71,20 +74,23 @@ class Junction:
         self.description = ''
         self.tag = ''
         self.zone_end = 0
+        self.pressure = 0
 
-class QJunction:
+class QJunction(object):
     section_name = 'QEPANET-JUNCTIONS'
-    section_header = 'ID               	DeltaZ               	ZoneEnd'
+    section_header = 'ID               	DeltaZ               	ZoneEnd               	Pressure'
     field_name_eid = 'id'
     field_name_delta_z = 'delta_z'
     field_name_zone_end = 'zone_end' #MG added for PSS calc
+    field_name_pressure = 'pressure'
 
     fields = [QgsField(field_name_eid, QVariant.String),
               QgsField(field_name_delta_z, QVariant.Double),
-              QgsField(field_name_zone_end, QVariant.String)]
+              QgsField(field_name_zone_end, QVariant.String),
+              QgsField(field_name_pressure, QVariant.Double)]
 
 
-class Reservoir:
+class Reservoir(object):
     section_name = 'RESERVOIRS'
     section_header = 'ID               	Head      	Pattern'
     field_name_eid = 'id'
@@ -115,14 +121,14 @@ class Reservoir:
         self.tag = ''
 
 
-class Status:
+class Status(object):
     section_name = 'STATUS'
 
     def __init__(self):
         pass
 
 
-class Tank:
+class Tank(object):
     section_name = 'TANKS'
     section_header = 'ID                	Elevation 	InitLevel 	MinLevel  	MaxLevel  	Diameter  	MinVol    	VolCurve'
     field_name_eid = 'id'
@@ -165,7 +171,7 @@ class Tank:
         self.tag = ''
 
 
-class Link:
+class Link(object):
     field_name_eid = 'id'
     field_name_var = 'variable'
 
@@ -176,7 +182,7 @@ class Link:
         self.eid = eid
 
 
-class Pipe:
+class Pipe(object):
     section_name = 'PIPES'
     section_header = 'ID                	Node1              	Node2              	Length             	Diameter           	Roughness          	MinorLoss          	Status'
     field_name_eid = 'id'
@@ -190,6 +196,8 @@ class Pipe:
     field_name_tag = 'tag'
     field_name_num_edu = 'num_edu'
     field_name_zone_id = 'zone_id'
+    field_name_velocity = 'velocity'
+    field_name_frictionloss = 'friction_loss'
 
 
     prefix = 'L'  # L to distinguish it from Pumps
@@ -204,7 +212,9 @@ class Pipe:
               QgsField(field_name_description, QVariant.String),
               QgsField(field_name_tag, QVariant.String),
               QgsField(field_name_num_edu, QVariant.Int),   #ADDED to allow for PSS calculation
-              QgsField(field_name_zone_id, QVariant.Int)]  #ADDED to allow for PSS calculation
+              QgsField(field_name_zone_id, QVariant.Int),  #ADDED to allow for PSS calculation
+              QgsField(field_name_velocity, QVariant.Double),  #ADDED to allow for PSS calculation
+              QgsField(field_name_frictionloss, QVariant.Double)]  #ADDED to allow for PSS calculation
 
     def __init__(self, eid):
         self.eid = eid
@@ -221,10 +231,12 @@ class Pipe:
         self.description = ''
         self.tag = ''
         self.num_edu = 1 #MG: added to allow for pipe diameter calculation for PSS analysis
-        self.zone_id = -1
+        self.zone_id = 0
+        self.velocity = 0
+        self.frictionloss = 0
 
 
-class Pump:
+class Pump(object):
     section_name = 'PUMPS'
     section_header = 'ID              	Node1           	Node2           	Parameters'
     field_name_eid = 'id'
@@ -262,7 +274,7 @@ class Pump:
         self.description = ''
         self.tag = ''
 
-class Valve:
+class Valve(object):
     section_name = 'VALVES'
     section_header = 'ID              	Node1           	Node2           	Diameter   	Type      	Setting   	MinorLoss'
     field_name_eid = 'id'
@@ -309,7 +321,7 @@ class Valve:
         self.description = ''
         self.tag = ''
 
-class QReservoir:
+class QReservoir(object):
     section_name = 'QEPANET-RESERVOIRS'
     section_header = 'ID               	DeltaZ             PressureHead'
     field_name_eid = 'id'
@@ -321,7 +333,7 @@ class QReservoir:
               QgsField(field_name_pressure_head, QVariant.Double)]
 
 
-class QTank:
+class QTank(object):
     section_name = 'QEPANET-TANKS'
     section_header = 'ID               	DeltaZ'
     field_name_eid = 'id'
@@ -331,30 +343,35 @@ class QTank:
               QgsField(field_name_delta_z, QVariant.Double)]
 
 
-class QPipe:
+class QPipe(object):
     section_name = 'QEPANET-PIPES'
-    section_header = 'ID               	Material              EDU                   ZoneID'
+    section_header = 'ID               	Material              EDU                   ZoneID                   Velocity                   FrictionLoss'
     field_name_eid = 'id'
     field_name_material = 'material'
     field_name_num_edu = "num_edu" #MG: added to allow for pipe diameter calculation.
     field_name_zone_id = "zone_id"
-
+    field_name_velocity = "velocity"
+    field_name_frictionloss = "frictionloss"
+    
     fields = [QgsField(field_name_eid, QVariant.String),
               QgsField(field_name_material, QVariant.String),
               QgsField(field_name_num_edu, QVariant.Int),
-              QgsField(field_name_zone_id, QVariant.Int)]
+              QgsField(field_name_zone_id, QVariant.Int),
+              QgsField(field_name_velocity, QVariant.Double),
+              QgsField(field_name_frictionloss, QVariant.Double)
+             ]
 
 
-class QVertices:
+class QVertices(object):
     section_name = 'QEPANET-VERTICES'
     section_header = ';Link            	Z-Coord'
 
 
-class QOptions:
+class QOptions(object):
     section_name = 'QOPTIONS'
 
 
-class Coordinate:
+class Coordinate(object):
     section_name = 'COORDINATES'
     section_header = 'Node            	X-Coord         	Y-Coord'
 
@@ -362,7 +379,7 @@ class Coordinate:
         pass
 
 
-class Vertex:
+class Vertex(object):
     section_name = 'VERTICES'
     section_header = 'Link            	X-Coord         	Y-Coord'
 
@@ -370,7 +387,7 @@ class Vertex:
         pass
 
 
-class Emitter:
+class Emitter(object):
     section_name = 'EMITTERS'
     section_header = 'Junction        	Coefficient'
 
@@ -378,7 +395,7 @@ class Emitter:
         pass
 
 
-class Tag:
+class Tag(object):
     section_name = 'TAGS'
     element_type_node = 'NODE'
     element_type_link = 'LINK'
@@ -388,47 +405,47 @@ class Tag:
         self.element_id = element_id
         self.tag = tag
 
-class Demand:
+class Demand(object):
     section_name = 'DEMANDS'
 
     def __init__(self):
         pass
 
-class Control:
+class Control(object):
     section_name = 'CONTROLS'
 
     def __init__(self):
         pass
 
-class Label:
+class Label(object):
     section_name = 'LABELS'
 
     def __init__(self):
         pass
 
 
-class Source:
+class Source(object):
     section_name = 'SOURCE'
 
     def __init__(self):
         pass
 
 
-class Reaction:
+class Reaction(object):
     section_name = 'REACTION'
 
     def __init__(self):
         pass
 
 
-class Mixing:
+class Mixing(object):
     section_name = 'MIXING'
 
     def __init__(self):
         pass
 
 
-class Backdrop:
+class Backdrop(object):
     section_name = 'BACKDROP'
 
     def __init__(self):

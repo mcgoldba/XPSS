@@ -1,20 +1,27 @@
+from __future__ import absolute_import
 # Modified from https://plugins.qgis.org/plugins/ImportEpanetInpFiles/
 # (C)Marios Kyriakou 2016
 # University of Cyprus, KIOS Research Center for Intelligent Systems and Networks
 
-from network import *
+from builtins import str
+from builtins import range
+from builtins import object
+from collections import OrderedDict
+from qgis.core import QgsFeature, QgsGeometry, NULL, QgsPoint, QgsPointXY, QgsLineString
+from .network import Junction, Reservoir, Tank, Pipe, Pump, Valve, QJunction, QReservoir, QTank, QPipe, QVertices
 
 # import readEpanetFile as ref
-import read_epanet_file
+from . import read_epanet_file
 import os
-from inp_writer import InpFile
+from .inp_writer import InpFile
 from ..tools.data_stores import MemoryDS
 from .options_report import Options, Unbalanced, Quality, Report, Hour, Times
 from .system_ops import Rule
 import codecs
+import re
 
 
-class InpReader:
+class InpReader(object):
 
     def __init__(self, inp_path):
         self.params = None
@@ -64,10 +71,10 @@ class InpReader:
         tags_d = {}
 
         # Check for QEPANET section in inp file. If it's there, update layer attributes
-        qepanet_junctions_elevcorr_od, qepanet_junctions_zone_end_od = self.read_qepanet_junctions()
+        qepanet_junctions_elevcorr_od, qepanet_junctions_zone_end_od, qepanet_junctions_pressure_od = self.read_qepanet_junctions()
         qepanet_tanks_od = self.read_qepanet_tanks()
         (qepanet_reservoirs_deltaz_od, qepanet_reservoirs_press_head_od) = self.read_qepanet_reservoirs()
-        (qepanet_pipes_material_od, qepanet_pipes_edu_od, qepanet_pipes_zone_id_od) = self.read_qepanet_pipes()
+        (qepanet_pipes_material_od, qepanet_pipes_edu_od, qepanet_pipes_zone_id_od, qepanet_pipes_velocity_od, qepanet_pipes_frictionloss_od) = self.read_qepanet_pipes()
         qepanet_vertices_od = self.read_qepanet_vertices()
 
         # Create layers and update
@@ -215,13 +222,13 @@ class InpReader:
 
             if i < ref.getBinNodeJunctionCount():
                 featJ = QgsFeature()
-                point = QgsPoint(float(x[i]), float(y[i]))
+                point = QgsPointXY(float(x[i]), float(y[i]))
 
                 delta_z = 0
                 if qepanet_junctions_elevcorr_od:
                     delta_z = qepanet_junctions_elevcorr_od[ndID[i]]
 
-                featJ.setGeometry(QgsGeometry.fromPoint(point))
+                featJ.setGeometry(QgsGeometry.fromPointXY(point))
 
                 # Emitter
                 emitter_coeff = NULL
@@ -235,12 +242,16 @@ class InpReader:
                 
                 zone_end = 0
                 if ndID[i] in qepanet_junctions_zone_end_od:
-                    zone_end = qepanet_junctions_zone_end_od[ndID[i]]
+                    zone_end = int(qepanet_junctions_zone_end_od[ndID[i]])
 
+                pressure = 0
+                if ndID[i] in qepanet_junctions_pressure_od:
+                    pressure = float(qepanet_junctions_pressure_od[ndID[i]])
+                    
                 featJ.setAttributes([ndID[i], ndEle[i] - delta_z, delta_z, ndPatID[i], ndBaseD[i], emitter_coeff,
-                                     nodes_desc[i], tag, zone_end])
+                                     nodes_desc[i], tag, zone_end, pressure])
                 junctions_lay_dp.addFeatures([featJ])
-                self.params.nodes_sindex.insertFeature(featJ)
+                self.params.nodes_sindex.addFeature(featJ)
 
             if i < links_count:
                 if len(stat) == i:
@@ -256,8 +267,8 @@ class InpReader:
                 if i in pump_index:
 
                     # Pump
-                    point1 = QgsPoint(float(x1[i]), float(y1[i]))
-                    point2 = QgsPoint(float(x2[i]), float(y2[i]))
+                    point1 = QgsPointXY(float(x1[i]), float(y1[i]))
+                    point2 = QgsPointXY(float(x2[i]), float(y2[i]))
 
                     chPowerPump = ref.getBinLinkPumpPower()
                     cheadpump = ref.getBinLinkPumpCurveNameID()
@@ -325,7 +336,7 @@ class InpReader:
                                 break
 
                     featPump = QgsFeature()
-                    featPump.setGeometry(QgsGeometry.fromPolyline([point1, point2]))
+                    featPump.setGeometry(QgsGeometry.fromPolylineXY([point1, point2]))
 
                     tag = ''
                     if linkID[i] in tags_d:
@@ -334,21 +345,21 @@ class InpReader:
                     featPump.setAttributes([linkID[i], param, head, power, speed, pump_pattern, pump_status,
                                             link_descs[i], tag])
                     pumps_lay_dp.addFeatures([featPump])
-                    self.params.nodes_sindex.insertFeature(featPump)
+                    self.params.nodes_sindex.addFeature(featPump)
 
                     pPos += 1
 
                 elif i in valve_index:
                     # Valve
-                    point1 = QgsPoint(float(x1[i]), float(y1[i]))
-                    point2 = QgsPoint(float(x2[i]), float(y2[i]))
+                    point1 = QgsPointXY(float(x1[i]), float(y1[i]))
+                    point2 = QgsPointXY(float(x2[i]), float(y2[i]))
 
                     length = 0
                     diameter = 0
                     roughness = 0
                     minorloss = 0
                     featValve = QgsFeature()
-                    featValve.setGeometry((QgsGeometry.fromPolyline([point1, point2])))
+                    featValve.setGeometry((QgsGeometry.fromPolylineXY([point1, point2])))
 
                     linkID = ref.getBinLinkValveNameID()
                     descs = ref.get_valves_desc()
@@ -372,7 +383,7 @@ class InpReader:
                          [linkID[vPos], linkDiameter[vPos], linkType[vPos], linkInitSett[vPos], linkMinorloss[vPos],
                           valve_status, descs[vPos], tag])
                     valves_lay_dp.addFeatures([featValve])
-                    self.params.nodes_sindex.insertFeature(featValve)
+                    self.params.nodes_sindex.addFeature(featValve)
 
                     vPos += 1
 
@@ -402,12 +413,11 @@ class InpReader:
                         if ndID[j] == end_node_id:
                             end_node_elev = ndEle[j] + delta_z
 
-                    point1 = QgsPointV2(QgsWKBTypes.PointZ, float(x1[i]), float(y1[i]), start_node_elev)
-                    point2 = QgsPointV2(QgsWKBTypes.PointZ, float(x2[i]), float(y2[i]), end_node_elev)
+                    point1 = QgsPoint(float(x1[i]), float(y1[i]), start_node_elev)
+                    point2 = QgsPoint(float(x2[i]), float(y2[i]), end_node_elev)
 
                     if vertx[i]:
-                        parts = []
-                        parts.append(point1)
+                        parts = [point1]
                         for mm in range(len(vertxyFinal[kk])):
                             a = vertxyFinal[kk][mm]
 
@@ -415,11 +425,11 @@ class InpReader:
                             if linkID[i] in qepanet_vertices_od:
                                 z = qepanet_vertices_od[linkID[i]]
 
-                            parts.append(QgsPointV2(QgsWKBTypes.PointZ, a[0], a[1], z))
+                            parts.append(QgsPoint(a[0], a[1], z))
 
                         parts.append(point2)
                         featPipe = QgsFeature()
-                        linestring = QgsLineStringV2()
+                        linestring = QgsLineString()
                         linestring.setPoints(parts)
                         geom_3d = QgsGeometry(linestring)
                         featPipe.setGeometry(geom_3d)
@@ -430,7 +440,7 @@ class InpReader:
                         # point1 = QgsPoint(float(x1[i]), float(y1[i]))
                         # point2 = QgsPoint(float(x2[i]), float(y2[i]))
 
-                        linestring = QgsLineStringV2()
+                        linestring = QgsLineString()
                         linestring.setPoints([point1, point2])
                         geom_3d = QgsGeometry(linestring)
                         featPipe.setGeometry(geom_3d)
@@ -447,23 +457,31 @@ class InpReader:
                         
                     num_edu = 0
                     if linkID[i] in qepanet_pipes_edu_od:
-                        num_edu = qepanet_pipes_edu_od[linkID[i]]
+                        num_edu = int(qepanet_pipes_edu_od[linkID[i]])
                         
                     zone_id = 0
                     if linkID[i] in qepanet_pipes_zone_id_od:
-                        zone_id = qepanet_pipes_zone_id_od[linkID[i]]
+                        zone_id = int(qepanet_pipes_zone_id_od[linkID[i]])
+                        
+                    velocity = 0
+                    if linkID[i] in qepanet_pipes_velocity_od:
+                        velocity = float(qepanet_pipes_velocity_od[linkID[i]])
+
+                    frictionloss = 0
+                    if linkID[i] in qepanet_pipes_frictionloss_od:
+                        frictionloss = float(qepanet_pipes_frictionloss_od[linkID[i]])
 
                     featPipe.setAttributes(
                         [linkID[i], linkLengths[i], linkDiameters[i], stat[i],
-                         linkRough[i], linkMinorloss[i], material, link_descs[i], tag, num_edu, zone_id])
+                         linkRough[i], linkMinorloss[i], material, link_descs[i], tag, num_edu, zone_id, velocity, frictionloss])
                     pipes_lay_dp.addFeatures([featPipe])
-                    self.params.nodes_sindex.insertFeature(featPipe)
+                    self.params.nodes_sindex.addFeature(featPipe)
 
             if i < ref.getBinNodeTankCount():
                 p = ref.getBinNodeTankIndex()[i] - 1
                 featTank = QgsFeature()
-                point = QgsPoint(float(x[p]), float(y[p]))
-                featTank.setGeometry(QgsGeometry.fromPoint(point))
+                point = QgsPointXY(float(x[p]), float(y[p]))
+                featTank.setGeometry(QgsGeometry.fromPointXY(point))
 
                 delta_z = 0
                 if ndTankID[i] in qepanet_tanks_od:
@@ -478,14 +496,14 @@ class InpReader:
                     [ndTankID[i], ndTankelevation[i] - delta_z, delta_z, initiallev[i], minimumlev[i], maximumlev[i], diameter[i],
                      minimumvol[i], volumecurv[i], nodes_desc[i], tag])
                 tanks_lay_dp.addFeatures([featTank])
-                self.params.nodes_sindex.insertFeature(featTank)
+                self.params.nodes_sindex.addFeature(featTank)
 
             if i < ref.getBinNodeReservoirCount():
                 p = ref.getBinNodeReservoirIndex()[i] - 1
 
                 feat_reserv = QgsFeature()
-                point = QgsPoint(float(x[p]), float(y[p]))
-                feat_reserv.setGeometry(QgsGeometry.fromPoint(point))
+                point = QgsPointXY(float(x[p]), float(y[p]))
+                feat_reserv.setGeometry(QgsGeometry.fromPointXY(point))
 
                 delta_z = 0
                 if ndID[p] in qepanet_reservoirs_deltaz_od:
@@ -503,7 +521,7 @@ class InpReader:
                 feat_reserv.setAttributes([ndID[p], reservoirs_elev[i] - delta_z - pressure_head, delta_z,
                                            pressure_head, ndPatID[p], nodes_desc[i], tag])
                 reservoirs_lay_dp.addFeatures([feat_reserv])
-                self.params.nodes_sindex.insertFeature(feat_reserv)
+                self.params.nodes_sindex.addFeature(feat_reserv)
 
         if curves:
             self.update_curves()
@@ -604,7 +622,7 @@ class InpReader:
                     time += 12
                 self.params.times.clocktime_start = time
             elif t[0].upper() == 'STATISTIC':
-                for key, text in Times.stats_text.iteritems():
+                for key, text in Times.stats_text.items():
                     if t[1].upper() == text.upper():
                         self.params.times.statistic = key
                         break
@@ -755,6 +773,7 @@ class InpReader:
 
         junctions_elevcorr_od = OrderedDict()
         junctions_zone_end_od = OrderedDict()
+        junctions_pressure_od = OrderedDict()
         if lines is not None:
             for line in lines:
                 if line.strip().startswith(';'):
@@ -764,8 +783,10 @@ class InpReader:
                     junctions_elevcorr_od[words[0].strip()] = float(words[1].strip())
                 if len(words) > 2:
                     junctions_zone_end_od[words[0].strip()] = float(words[2].strip())
+                if len(words) > 3:
+                    junctions_pressure_od[words[0].strip()] = float(words[3].strip())
 
-        return junctions_elevcorr_od, junctions_zone_end_od
+        return junctions_elevcorr_od, junctions_zone_end_od, junctions_pressure_od
 
     def read_qepanet_reservoirs(self):
 
@@ -804,21 +825,34 @@ class InpReader:
         pipes_material_od = OrderedDict()
         pipes_edu_od = OrderedDict()
         pipes_zone_id_od = OrderedDict()
+        pipes_velocity_od = OrderedDict()
+        pipes_frictionloss_od = OrderedDict()
         if lines is not None:
             for line in lines:
                 if line.strip().startswith(';'):
                     continue
                 words = line.split()
-                if len(words) > 1:
+                #print("words: ", words)
+                spaces = re.findall(' +', line)  #extract the white space between words
+                #print("spaces: ", spaces)
+                if len(words) > 1:  
                     pipes_material_od[words[0].strip()] = words[1].strip()
-                if len(words) > 2:
-                    pipes_edu_od[words[0].strip()] = words[2].strip()
-                if len(words) > 3:
+                if len(words) > 2:  #parses through line to find all words separted by a single space
+                    i=2
+                    while spaces[i-1] is ' ':
+                        pipes_material_od[words[0].strip()] = pipes_material_od[words[0].strip()] + (" "+words[i].strip())
+                        i +=1
+                    pipes_edu_od[words[0].strip()] = words[i].strip()
+                if len(words) > i+1:
                     pipes_zone_id_od[words[0].strip()] = words[3].strip()
+                if len(words) > i+2:
+                    pipes_velocity_od[words[0].strip()] = words[4].strip()
+                if len(words) > i+3:
+                    pipes_frictionloss_od[words[0].strip()] = words[5].strip()
                     
-                    
+        #print("pipe_material: ", pipes_material_od)            
 
-        return pipes_material_od, pipes_edu_od, pipes_zone_id_od
+        return pipes_material_od, pipes_edu_od, pipes_zone_id_od, pipes_velocity_od, pipes_frictionloss_od
 
     def read_qepanet_vertices(self):
 
