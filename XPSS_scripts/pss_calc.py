@@ -9,10 +9,15 @@ import scipy.interpolate as interp
 import scipy.linalg as sla
 from scipy import optimize
 from scipy.optimize import curve_fit
-from qepanet.XPSS_scripts.data_mod import PSSDataMod
+from qepanet.XPSS_scripts.data_mod import PSSDataMod, PipeMaterial, PipeClass
 
 class PSSCalc:
-    
+    PipeMaterialName = {}
+    PipeMaterialName[PipeMaterial.PVC] = 'PVC'
+    PipeMaterialName[PipeMaterial.HDPE] = 'HDPE'
+    PipeClassName = {}
+    PipeClassName[PipeClass.PVC_Sch40] = 'PVC Sch. 40'
+    PipeClassName[PipeClass.HDPE_DR11] = 'HDPE DR11'
     def __init__(self):
         pass
       
@@ -158,48 +163,53 @@ class PSSCalc:
         Accum_flow = self.get_accum_edu(C, Flow_gen)
         return Accum_flow
         
-    def get_pipe_dia(self, Pipe_props, l_table, l_material, v_min, v_max, calc_pipe_dia):
+    def get_pipe_dia(self, Pipe_props, l_table, l_class, v_min, v_max, calc_pipe_dia):
         # l_table =  pandas table imported from csv file
-        
+        # TODO:  Split this into two methods, one for calc_pipe_dia = True, and one for calc_pipe_dia = False
         Accum_flow = Pipe_props.iloc[:,Pipe_props.columns.get_loc('Max Flowrate [gpm]')].to_numpy() 
         # verify that a valid pipe material was specified
-        materials = l_table['Material'].unique().tolist()
-        #PSSDataMod().log_progress(str(materials))
+        l_classes = l_table['Material'].unique().tolist()
+        PSSDataMod().log_progress(str(l_classes))
+        #for pClass in PipeClass:
         error = True
-        for i in range(len(materials)):
-            if l_material == materials[i]:
-                error = False
-        if error:
-            raise Exception("ERROR:  Pipe material specified is not one of the available options: "+str(materials))
+        if any( s == l_class for s in list(self.PipeClassName.values())):
+            error = False
+        if error is True:
+             PSSDataMod().log_error("Pipe class specified is not one of the available options: "+str(list(self.PipeClassName.values())))
+        Pipe_v = np.zeros(len(Accum_flow))
         if calc_pipe_dia is True:
             Pipe_dia = np.zeros(len(Accum_flow))
         else:
             Pipe_props = PSSDataMod().get_qepanet_pipe_props(Pipe_props, ['diameter'], ['Diameter [in]'])
-            Pipe_dia = Pipe_props['Diameter [in]'].to_numpy()
-        Pipe_v = np.zeros(len(Accum_flow))
-                            
+            Pipe_dia = pd.to_numeric(Pipe_props['Diameter [in]']).to_list()
+
         # populate the list of nominal diameters
-        l_table_sp = l_table.loc[l_table['Material'] == l_material]  # The pipe table that is specific to the selected material
+        l_table_sp = l_table.loc[l_table['Material'] == l_class]  # The pipe table that is specific to the selected material
         
         nom_dia = pd.to_numeric(l_table_sp["Nominal Diameter [in]"]).tolist()
         in_dia = pd.to_numeric(l_table_sp["Actual ID [in]"]).tolist()
         
-        for p in range(len(Accum_flow)):
-            i = 0
-            v = self.convert_gpm_to_ft3_per_s(Accum_flow[p]) / self.calc_pipe_area(in_dia[i])
-            while v > v_max:
-                i += 1
-                if (i > len(in_dia)-1):
-                    raise Exception("ERROR:  Pipe velocity is too large for the available diameters.")
-                v = self.convert_gpm_to_ft3_per_s(Accum_flow[p]) / self.calc_pipe_area(in_dia[i])
-            if v < v_min:
-                raise Exception("ERROR: a suitable pipe diameter cannot be found for a pipe")
-            if calc_pipe_dia is True:
-                Pipe_dia[p] = nom_dia[i]
-            Pipe_v[p] = v
+        PSSDataMod().log_progress('Pipe Inner Diameter [in]:  '+str(in_dia))
         if calc_pipe_dia is True:
-            df = pd.DataFrame(data=Pipe_dia, columns=['Diameter [in]'], dtype='float')
-        
+            for p in range(len(Accum_flow)):
+                i = 0
+                v = self.convert_gpm_to_ft3_per_s(Accum_flow[p]) / self.calc_pipe_area(in_dia[i])
+                while v > v_max:
+                    i += 1
+                    if (i > len(in_dia)-1):
+                        PSSDataMod().log_error("ERROR:  Pipe velocity is too large for the available diameters.")
+                    v = self.convert_gpm_to_ft3_per_s(Accum_flow[p]) / self.calc_pipe_area(in_dia[i])
+                if v < v_min:
+                    PSSDataMod().log_warning("No pipe diameter available that is small enough to meet minimum velocity requirement.")
+                Pipe_dia[p] = nom_dia[i]
+                Pipe_v[p] = v
+        else:
+            for p in range(len(Accum_flow)):
+                d = in_dia[nom_dia.index(Pipe_dia[p])]
+                v = self.convert_gpm_to_ft3_per_s(Accum_flow[p]) / self.calc_pipe_area(d)
+                Pipe_v[p] = v
+        df = pd.DataFrame(data=Pipe_dia, columns=['Diameter [in]'], dtype='float')
+        if calc_pipe_dia is True:
             df.reset_index(drop=True, inplace=True)
             Pipe_props.reset_index(drop=True, inplace=True)
     
@@ -311,7 +321,7 @@ class PSSCalc:
         return Pipe_props
     
     
-    def calc_pipe_loss_hazwil(self, Pipe_props, l_dia_table, l_material, l_C_table):
+    def calc_pipe_loss_hazwil(self, Pipe_props, l_dia_table, l_material, l_class, l_C_table):
         #extract pipe velocity from "Pipe_props" in [ft/s]
         v = Pipe_props['Max Velocity [ft/s]']
         #v = v.transpose() 
@@ -320,8 +330,14 @@ class PSSCalc:
         #extract actual ID in [in]
         dia_nom = Pipe_props[['Diameter [in]']]
         #PSSDataMod().log_progress(str(dia_nom))
-        dia = l_dia_table[l_dia_table['Material'] == l_material]
+        dia = l_dia_table[l_dia_table['Material'] == l_class]
+        
+        PSSDataMod().log_progress(str(dia_nom))
+        
+        PSSDataMod().log_progress(str(dia))
+        
         dia_nom = dia_nom.merge(dia, how='left', left_on='Diameter [in]', right_on='Nominal Diameter [in]')
+        #dia_nom = pd.concat([dia_nom, dia])
         dia = dia_nom['Actual ID [in]']
         #dia = pd.to_numeric(dia)
         #dia = dia.transpose()
@@ -337,8 +353,12 @@ class PSSCalc:
         #PSSDataMod().log_progress(str(L))
         #L = L[0]
         
+        PSSDataMod().log_progress('Pipe material:'+str(self.PipeMaterialName[l_material]))
+        
         #get C value
-        C = l_C_table.loc[l_material,'C Factor']
+        C = l_C_table.loc[self.PipeMaterialName[l_material],'C Factor']
+        
+        PSSDataMod().log_progress('C factor:  '+str(C))
         
         #PSSDataMod().log_progress('Velocity: '+str(v))
         #PSSDataMod().log_progress('Flow: '+str(Q))
@@ -418,7 +438,7 @@ class PSSCalc:
         
         return [Pipe_props, Node_props]
     
-    def get_accum_loss_ind(self, Pipe_props, Node_props, In, sort_lst, node_srt_lst, res_elev, p_calc): #Same as "get_accum_loss" modified to calculate losses based on graph theory with an incidence matrix.  Added calculation of Static head.
+    def get_accum_loss_ind(self, Pipe_props, Node_props, In, sort_lst, node_srt_lst, res_elev, p_calc, station_depth): #Same as "get_accum_loss" modified to calculate losses based on graph theory with an incidence matrix.  Added calculation of Static head.
         """ {Function}
                 Calculates the pressure in each node of the system and evaluated the maximum accumulated loss to include in the results table output. 
             {Variables}
@@ -479,7 +499,7 @@ class PSSCalc:
         #PSSDataMod().log_progress("Elevation: ", type(Elevation))
         #PSSDataMod().log_progress("res_elev: ", type(res_elev))
         
-        S = -(Elevation - res_elev) # Static head.  -1* the elevation relative to the outlet
+        S = -(Elevation - (res_elev+station_depth)) # Static head.  -1* the elevation relative to the outlet
         #PSSDataMod().log_progress("Headloss: ", Headloss)
         #PSSDataMod().log_progress("Static head: ", Static_head)
         #PSSDataMod().log_progress("Pressure: ", Pressure_old)
@@ -848,7 +868,9 @@ class PSSCalc:
                 Feet = 1
                 Degrees = 2
                 
-            
+            # TODO: Correct so that the pipe length is not converted multiple times
+            #pids = Pipe_props.iloc[:, Pipe_props.columns.get_loc('Pipe ID')].tonumpy()
+            #Length = network_handling.calc_3d_length(params, )
             Length = Pipe_props.iloc[:,Pipe_props.columns.get_loc('Length [ft]')].to_numpy()
             
             PSSDataMod().log_progress("Length:\n"+str(Length))
