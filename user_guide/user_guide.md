@@ -96,7 +96,9 @@ To automatically extract elevation data as te pipe network is drawn, a raster im
 *  Existing elevation data can be downloaded from many sources, such as:
 
 [USGS](https://viewer.nationalmap.gov/basic/)
+
 [Earth Explorer](https://earthexplorer.usgs.gov/)
+
 [Open Topography](https://opentopography.org/)
 
 *  Once the tiff image of elevation data has been dowbloaded, load it into QGIS as a raster image:
