@@ -87,7 +87,7 @@ To load a predefined pipe layer:
 In addition, for the Node Pressures, the `Junctions` layer properties should be selected (rather than the `Pipes` layer)
 
  
-# # Adding Elevation Data
+## Adding Elevation Data
 
 To automatically extract elevation data as te pipe network is drawn, a raster image of the area elevation must first be loaded.  This is typically done either by uploading an existing raster image or extracting the elevation data from AutoCAD drawings.
 
