@@ -56,4 +56,6 @@ XPSS makes the additional assumptions about the system:
 
 *  Information on the layout and organization of the source code can be found in the [developer's guide](dev_guide/dev_guide.md) (**Work in Progress**)
 
+# No Warranty or Guarantee
 
+This software is offered as is, without any warranty or guarantee.  Use at your own risk.
