@@ -10,8 +10,6 @@
 
 *  Create a new ".inp" file.  This file is a native EPANET input file.  It will contain all the pipe network information that is used by QEPANET.
 
-![](2.png)
-
 *  Select a Coordinate System.  Any coordinate system will work, but the most common are 'WGS 64', and 'NAD 83'.  The choice of coordinate system only matters when the project will import existing geographical data with some coordinate system.
 
 ![](3.png)
@@ -88,8 +86,8 @@ To load a predefined pipe layer:
 
 In addition, for the Node Pressures, the `Junctions` layer properties should be selected (rather than the `Pipes` layer)
 
-
-## Adding Elevation Data
+ 
+# # Adding Elevation Data
 
 To automatically extract elevation data as te pipe network is drawn, a raster image of the area elevation must first be loaded.  This is typically done either by uploading an existing raster image or extracting the elevation data from AutoCAD drawings.
 
