@@ -226,7 +226,7 @@ class InpReader(object):
 
                 delta_z = 0
                 if qepanet_junctions_elevcorr_od:
-                    delta_z = qepanet_junctions_elevcorr_od[ndID[i]]
+                    delta_z = float(qepanet_junctions_elevcorr_od[ndID[i]])
 
                 featJ.setGeometry(QgsGeometry.fromPointXY(point))
 

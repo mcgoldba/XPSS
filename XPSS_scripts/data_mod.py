@@ -16,16 +16,39 @@ from qepanet.model.network_handling import NetworkUtils
 from qepanet.model.inp_writer import InpFile
 from qepanet.tools.parameters import Parameters
 
+from enum import Enum, auto
+class PipeMaterial(Enum):
+    PVC = auto()
+    HDPE = auto()
+#PipeMaterialName = {}
+#PipeMaterialName[PipeMaterial.PVC] = 'PVC'
+#PipeMaterialName[PipeMaterial.HDPE] = 'HDPE'
+
+class PipeClass(Enum):
+    PVC_Sch40 = auto()
+    HDPE_DR11 = auto()
+#PipeClassName = {}
+#PipeClassName[PipeClass.PVC_Sch40] = 'PVC Sch. 40'
+#PipeClassName[PipeClass.HDPE_DR11] = 'HDPE DR11' 
+
+
 
 class PSSDataMod:
-
+    PipeMaterialName = {}
+    PipeMaterialName[PipeMaterial.PVC] = 'PVC'
+    PipeMaterialName[PipeMaterial.HDPE] = 'HDPE'
+    PipeClassName = {}
+    PipeClassName[PipeClass.PVC_Sch40] = 'PVC Sch. 40'
+    PipeClassName[PipeClass.HDPE_DR11] = 'HDPE DR11'
+    
+        
     def __init__(self):
         self.qepa = qgis.utils.plugins["qepanet"]
         self.params = self.qepa.params  #refer to the parameters stored in the existing instance of qepanet
         self.pipe_fts = pd.DataFrame(self.params.pipes_vlay.getFeatures(),columns=[field.name() for field in self.params.pipes_vlay.fields() ])  #extract pipe attribute table as a pandas array
         self.junc_fts = pd.DataFrame(self.params.junctions_vlay.getFeatures(),columns=[field.name() for field in self.params.junctions_vlay.fields() ])  #extract pipe attribute table as a pandas array
         self.res_fts = pd.DataFrame(self.params.reservoirs_vlay.getFeatures(),columns=[field.name() for field in self.params.reservoirs_vlay.fields() ])  #extract pipe attribute table as a pandas array
-    
+   
     
     def check(self, check_pipe_conns, check_node_conns):
         #TODO:  rewrite to use a pandas dataframe
@@ -364,6 +387,8 @@ class PSSDataMod:
                     (Pandas Dataframe) unsorted list of Pipe attributes based on ordering of QGIS features.
                 Node_props_pd:     
                     (Pandas Dataframe) unsorted list of node attributes based on ordering of QGIS features.  This includes all junctions, but not the reservoir
+                res:
+                    ()
 
             {Outputs}
                 C:
@@ -1174,7 +1199,9 @@ class PSSDataMod:
         it = layer.getFeatures()
         
         # replace any spaces in the material with an underscore since the EPANET file is space delimited
-        l_material = l_material.replace(" ", "_")
+        #l_material = l_material.replace(" ", "_")
+        
+        
         
         layer.startEditing()
             
@@ -1196,7 +1223,7 @@ class PSSDataMod:
             velocity = Pipe_props.loc[i, 'Max Velocity [ft/s]']
             frictionloss = Pipe_props.loc[i, 'Friction Loss [ft]']
             
-            data = [str(pipe_id), str(length), str(diameter), 'OPEN', str(C_factor), "0", l_material, "", "", str(num_edu), str(zone_id), "{:.2f}".format(velocity), "{:.2f}".format(frictionloss)]
+            data = [str(pipe_id), str(length), str(diameter), 'OPEN', str(C_factor), "0", self.PipeMaterialName[l_material], "", "", str(num_edu), str(zone_id), "{:.2f}".format(velocity), "{:.2f}".format(frictionloss)]
             
             #self.log_progress(str(data))
             
@@ -1463,7 +1490,7 @@ class PSSDataMod:
         return sort_lst_inv
     
     
-    def validate_inputs(self, all_pumps_on, op_edu_calc, p_calc, l_material):
+    def validate_inputs(self, all_pumps_on, op_edu_calc, p_calc, l_material, l_class):
         val = True
         
         vals_all_pumps_on = [True, False]
@@ -1483,12 +1510,16 @@ class PSSDataMod:
             self.log_progress("    Valid options are "+str(vals_p_calc))
             val = False
         
-        vals_l_material = ['HDPE_DR11', 'PVC']
-        if l_material not in vals_l_material:
-            self.log_progress("    Warning:  Value for 'l_msterial' is not valid.\n")
-            self.log_progress("    Valid options are "+str(vals_l_material))
+        #vals_l_material = ['HDPE', 'PVC']
+        if l_material not in PipeMaterial:
+            self.log_progress("    Warning:  Value for 'l_material' is not valid.\n")
+            self.log_progress("    Valid options are "+str(PipeMaterial))
             val = False
         
+        if l_class not in list(self.PipeClassName.values()):
+            self.log_progress("    Warning:  Value for 'l_material' is not valid.\n")
+            self.log_progress("    Valid options are "+str(list(self.PipeClassName.values())))
+            val = False
         return val
     
     def apply_pipe_styling(self):

@@ -247,12 +247,12 @@ class LinkHandler(object):
             if start_node_ft is None:
                 start_node_deltaz = 0
             else:
-                start_node_deltaz = start_node_ft.attribute(Junction.field_name_delta_z)
+                start_node_deltaz = float(start_node_ft.attribute(Junction.field_name_delta_z))
 
             if end_node_ft is None:
                 end_node_deltaz = 0
             else:
-                end_node_deltaz = end_node_ft.attribute(Junction.field_name_delta_z)
+                end_node_deltaz = float(end_node_ft.attribute(Junction.field_name_delta_z))
 
             for p in range(0, pipe_geom_2.get().vertexCount(0, 0)):
 

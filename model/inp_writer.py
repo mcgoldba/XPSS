@@ -555,18 +555,18 @@ class InpFile(object):
             if tag_name is not None and tag_name != NULL and tag_name != '':
                 self.tags.append(Tag(Tag.element_type_link, eid, tag_name))
                 
-            if not isinstance(num_edu, unicode):
-                line += InpFile.pad('{0:.2f}'.format(num_edu), InpFile.pad_19)
-            else:
-                line += InpFile.pad(num_edu, InpFile.pad_19)
-                
-            if zone_id != NULL:
-                if not isinstance(zone_id, unicode):
-                    line += InpFile.pad('{0:.2f}'.format(zone_id), InpFile.pad_19)
-                else:
-                    line += InpFile.pad(zone_id, InpFile.pad_19)
-            else:
-                zone_id = 0
+            #if not isinstance(num_edu, unicode):
+            #    line += InpFile.pad('{0:.2f}'.format(num_edu), InpFile.pad_19)
+            #else:
+            #    line += InpFile.pad(num_edu, InpFile.pad_19)
+            #    
+            #if zone_id != NULL:
+            #    if not isinstance(zone_id, unicode):
+            #        line += InpFile.pad('{0:.2f}'.format(zone_id), InpFile.pad_19)
+            #    else:
+            #        line += InpFile.pad(zone_id, InpFile.pad_19)
+            #else:
+            #    zone_id = 0
 
     
             

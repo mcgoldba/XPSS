@@ -38,9 +38,33 @@ XPSS makes the additional assumptions about the system:
 
 1.  Install QGIS v. 3.4.0 or greater as described here:  https://qgis.org/en/site/forusers/download.html
 
+<<<<<<< HEAD
 2.  Copy the contents of this repository into C:\{QGIS Install Dir}\
 
 
 # Use
 
 
+=======
+2.  Do either of the following:
+    
+    a.  Copy the contents of this repository into C:\{QGIS Install Dir}\profiles\default\python\qepanet
+    
+    b.  If git is installed on the computer, open a command prompt from within the directory C:\{QGIS Install Dir}\profiles\default\python\qepanet and type:
+        `git clone https://github.com/mcgoldba/XPSS.git`
+        
+
+# Additional Details
+
+*  Information on the basic use of these scripts can be found in the [user guide](user_guide/user_guide.md)
+
+*  Details on the various user defined options can be found [here](user_guide/user_defined_options.md) (**Work in Progress**)
+
+*  Details on the theory behind these claculations can be founnd in the [theory guide](theory_guide/theory_guide.md)  (**Work in Progress**)
+
+*  Information on the layout and organization of the source code can be found in the [developer's guide](dev_guide/dev_guide.md) (**Work in Progress**)
+
+# No Warranty or Guarantee
+
+This software is offered as is, without any warranty or guarantee.  Use at your own risk.
+>>>>>>> dev
