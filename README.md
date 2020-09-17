@@ -39,7 +39,9 @@ XPSS makes the additional assumptions about the system:
 1.  Install QGIS v. 3.4.0 or greater as described here:  https://qgis.org/en/site/forusers/download.html
 
 2.  Do either of the following:
+    
     a.  Copy the contents of this repository into C:\{QGIS Install Dir}\profiles\default\python\qepanet
+    
     b.  If git is installed on the computer, open a command prompt from within the directory C:\{QGIS Install Dir}\profiles\default\python\qepanet and type:
         `git clone https://github.com/mcgoldba/XPSS.git`
         
