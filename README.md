@@ -38,14 +38,6 @@ XPSS makes the additional assumptions about the system:
 
 1.  Install QGIS v. 3.4.0 or greater as described here:  https://qgis.org/en/site/forusers/download.html
 
-<<<<<<< HEAD
-2.  Copy the contents of this repository into C:\{QGIS Install Dir}\
-
-
-# Use
-
-
-=======
 2.  Do either of the following:
     
     a.  Copy the contents of this repository into C:\{QGIS Install Dir}\profiles\default\python\qepanet
@@ -67,4 +59,3 @@ XPSS makes the additional assumptions about the system:
 # No Warranty or Guarantee
 
 This software is offered as is, without any warranty or guarantee.  Use at your own risk.
->>>>>>> dev
