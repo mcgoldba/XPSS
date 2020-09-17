@@ -46,12 +46,12 @@ XPSS makes the additional assumptions about the system:
 
 # Additional Details
 
-*  Information on the basic use of these scripts can be found in the ![user guide](user_guide.md)
+*  Information on the basic use of these scripts can be found in the [user guide](user_guide.md)
 
-*  Details on the various user defined options can be found ![here](user_defined_options.md)
+*  Details on the various user defined options can be found [here](user_defined_options.md) (**Work in Progress**)
 
-*  Details on the theory behind these claculations can be founnd in the ![theory guide](theory_guide.md)  (**NOTE** This is a work in progress)
+*  Details on the theory behind these claculations can be founnd in the [theory guide](theory_guide.md)  (**Work in Progress**)
 
-*  Information on the layout and organization of the source code can be found in the ![developer's guide](dev_guide.md)
+*  Information on the layout and organization of the source code can be found in the [developer's guide](dev_guide.md) (**Work in Progress**)
 
 
