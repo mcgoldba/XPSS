@@ -17,7 +17,7 @@ from ..model.water_quality import Reactions
 
 
 class InpFile(object):
-    
+
     pad_19 = 19
     pad_22 = 22
 
@@ -381,14 +381,14 @@ class InpFile(object):
 
             if tag_name is not None and tag_name != NULL and tag_name != '':
                 self.tags.append(Tag(Tag.element_type_node, eid, tag_name))
-    
+
             if zone_end is None or zone_end == NULL:
                 zone_end = 0
-    
+
             elev += delta_z
-            
+
             #print("elev: ", type(elev))
-            
+
             # Line
             line = InpFile.pad(eid, InpFile.pad_19)
             line += InpFile.pad('{0:.2f}'.format(elev))
@@ -499,11 +499,14 @@ class InpFile(object):
         # Build nodes spatial index
         sindex = QgsSpatialIndex()
         for feat in params.junctions_vlay.getFeatures():
-            sindex.insertFeature(feat)
+            #sindex.insertFeature(feat)
+            sindex.addFeature(feat)
         for feat in params.reservoirs_vlay.getFeatures():
-            sindex.insertFeature(feat)
+            #sindex.insertFeature(feat)
+            sindex.addFeature(feat)
         for feat in params.tanks_vlay.getFeatures():
-            sindex.insertFeature(feat)
+            #sindex.insertFeature(feat)
+            sindex.addFeature(feat)
 
         for pipe_ft in pipe_fts:
 
@@ -554,12 +557,12 @@ class InpFile(object):
 
             if tag_name is not None and tag_name != NULL and tag_name != '':
                 self.tags.append(Tag(Tag.element_type_link, eid, tag_name))
-                
+
             #if not isinstance(num_edu, unicode):
             #    line += InpFile.pad('{0:.2f}'.format(num_edu), InpFile.pad_19)
             #else:
             #    line += InpFile.pad(num_edu, InpFile.pad_19)
-            #    
+            #
             #if zone_id != NULL:
             #    if not isinstance(zone_id, unicode):
             #        line += InpFile.pad('{0:.2f}'.format(zone_id), InpFile.pad_19)
@@ -568,8 +571,8 @@ class InpFile(object):
             #else:
             #    zone_id = 0
 
-    
-            
+
+
 
             out.append(line)
 
@@ -877,13 +880,13 @@ class InpFile(object):
                 zone_end = 0
             if pressure == NULL:
                 pressure = 0
-            
+
             # Line
             line = InpFile.pad(eid, InpFile.pad_19)
             line += InpFile.pad('{0:.2f}'.format(delta_z), InpFile.pad_19)
             line += InpFile.pad("{:.0f}".format(zone_end), InpFile.pad_19)
             line += InpFile.pad("{:.2f}".format(pressure))
-            
+
 
             out.append(line)
 
@@ -932,7 +935,7 @@ class InpFile(object):
             zone_id = int(p_ft.attribute(Pipe.field_name_zone_id))
             velocity = float(p_ft.attribute(Pipe.field_name_velocity))
             frictionloss = float(p_ft.attribute(Pipe.field_name_frictionloss))
-            
+
             if material == NULL:
                 material = ''
             if num_edu == NULL:
@@ -943,7 +946,7 @@ class InpFile(object):
                 velocity = 0
             if frictionloss == NULL:
                 frictionloss = 0
-            
+
 
             # Line
             line = InpFile.pad(eid, InpFile.pad_19)

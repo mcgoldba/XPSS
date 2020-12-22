@@ -12,29 +12,29 @@ from qepanet.XPSS_scripts.data_mod import PSSDataMod, PipeMaterial, PipeClass
 #consoleWidget = iface.mainWindow().findChild( QDockWidget , QDockWidget, 'PythonConsole' )
 #consoleWidget.console.shellOut.clearConsole()
 
-# USER INPUTS 
+# USER INPUTS
 
 start_time = time.time()
 
 #- Boolean Switches
 
-debug = False       #True:  Print additional information to assist in debugging
+debug = True       #True:  Print additional information to assist in debugging
 
-zones = False       #True:  After calculating system characteristics simplify results by 
+zones = False       #True:  After calculating system characteristics simplify results by
                     #        grouping into zones
                     #False: Display results for each pipe.
 
 run_checks = False  #If True run the checks for a correct system geometry
 
-check_pipe_conns = False  #check if 2 nodes are connected to each pipe (also requires run_checks = True) 
+check_pipe_conns = False  #check if 2 nodes are connected to each pipe (also requires run_checks = True)
 check_node_conns = False    #check if every nodeis  connected to a pipe (also requires run_checks = True)
 
-all_pumps_on = True  # if true calculate with all pumps operating.  If false, calculate number operating edus based on specified statistical model (default EPA)
+all_pumps_on = False  # if true calculate with all pumps operating.  If false, calculate number operating edus based on specified statistical model (default EPA)
 
 calc_pipe_dia = True  # if True pipe diameters are calculated based on user specified velocity limits.
                         # if False the diameters specified in the attribute table are used for the calculation.
 
-pipe_dia_based_zones = False  #if True zones are determined based on changes in diameter in the forcemain, otherwise divisions are based on user input                
+pipe_dia_based_zones = False  #if True zones are determined based on changes in diameter in the forcemain, otherwise divisions are based on user input
 
 #- Solver Methods
 
@@ -52,22 +52,22 @@ p_calc = 'forward-sub'  #indicate how to calculate pressure.  options are:
                         #   "forward-sub"   forward substitution
 
 #- System Configuration Options
-                
-units_dist = 1      #Units of measure for length.  
+
+units_dist = 1      #Units of measure for length.
                     #Valid Options are:
                     #   0: Meters
-                    #   1: Feet 
-    
+                    #   1: Feet
+
 p_flow = 11 # flow rate for each pump [gpm]  (Assumes (1) all stations have the same pump and (2) the flowrate is constant regardless of the pressure within the system)
 gpd = 250 #gallons per day per EDU
-        
+
 l_class = 'HDPE DR11'  # Pressure rating of pipe.  Options are:
                         #       'PVC Sch. 40'
                         #       'HDPE DR11'
 l_material = PipeMaterial.HDPE    #material of pipe.  Options are:
                     #   PipeMaterial.PVC:  Standard Sch40 PVC Pipe
                     #   PipeMaterial.HDPE:  DR11 HDPE Pipe
-                    
+
 
 v_min = 2  #minimum allowable velocity in any pipe [ft/s]
 v_max = 4.5  #maximum allowable velocity in any pipe [ft/s]
@@ -97,7 +97,7 @@ l_rough_table = pd.read_csv(script_filepath+l_rough_table_file, index_col=0)
 op_edu_table = pd.read_csv(script_filepath+op_edu_table_file)
 
 Pipe_read_in = ['length']  # Values that are to be read from qepanet other options are [diameter, roughness, minor_loss, status, description, tag_name]]
-Pipe_pd_nm = ['Length [ft]'] 
+Pipe_pd_nm = ['Length [ft]']
 
 export_filepath = r'C:\Users\mgoldbach\Documents\PythonProjects\pss_submittal'
 
@@ -113,7 +113,7 @@ export_filename_pipe_sum = '\pss_analysis_pipe_sum.csv'
 
 export_filename_inp = '\pss_analysis_inputs.csv'
 
-# END USER INPUTS 
+# END USER INPUTS
 #  NOTE:  This script was created to reproduce the E-One calculation.
 
 dataMod = PSSDataMod()
@@ -138,7 +138,7 @@ else:
 if has_error == True:
     raise PSSDataMod.log_error("System geometry in not valid.", stop=True)
 
-    
+
 #dataMod.log_progress("...Done!")
 
 calc = PSSCalc()
@@ -241,14 +241,14 @@ dataMod.log_debug(str(Pipe_props), debug)
 
 dataMod.log_progress("Getting the length values from qepanet...")
 
-Pipe_props = dataMod.get_qepanet_pipe_props(Pipe_props, ['length'], ['Length [ft]'])
+Pipe_props = dataMod.get_qepanet_pipe_props2(Pipe_props, ['length'], ['Length [ft]'])
 
 dataMod.log_progress("Converting length to XPSS units...")
 
 Pipe_props = calc.convert_length(Pipe_props, units_dist)
 
-#dataMod.log_debug("Node props: \n", Node_props, debug)
-#dataMod.log_debug(str(Pipe_props), debug)
+dataMod.log_debug("Node props: \n"+str(Node_props), debug)
+dataMod.log_debug(str(Pipe_props), debug)
 
 #dataMod.log_progress("...Done!")
 
@@ -257,13 +257,13 @@ dataMod.log_progress("Calculating headloss...")
 [Pipe_props, C_factor] = calc.calc_pipe_loss_hazwil(Pipe_props, l_dia_table, l_material, l_class, l_rough_table)
 
 dataMod.log_debug("Node props: \n"+str(Node_props), debug)
-dataMod.log_debug(str(Pipe_props), debug)
+dataMod.log_debug(str(Pipe_props['Length [ft]']), debug)
 
 #dataMod.log_progress("...Done!")
 
 dataMod.log_progress("Calculating pressures for all nodes and pipes...")
 
-[Pipe_props, Node_props, max_elev, elev_out] = calc.get_accum_loss_ind(Pipe_props, Node_props, In, sort_lst, node_srt_lst, res_elev[0], p_calc, station_depth)
+[Pipe_props, Node_props, max_elev, elev_out] = calc.get_accum_loss_ind2(Pipe_props, Node_props, In, sort_lst, node_srt_lst, res_elev[0], p_calc, station_depth)
 
 #dataMod.log_progress("Node props: \n", Node_props)
 #dataMod.log_progress(str(Pipe_props))
@@ -272,9 +272,10 @@ dataMod.log_progress("Calculating pressures for all nodes and pipes...")
 
 dataMod.log_progress("Translating node pressure values to pipe values...")
 
-[Pipe_props] = dataMod.get_pipe_elev_data(Pipe_props, Node_props, sort_lst, node_srt_lst, In, res_elev[0])
+[Pipe_props] = dataMod.get_pipe_elev_data2(Pipe_props, Node_props, sort_lst, node_srt_lst, In, res_elev[0])
 
 dataMod.log_debug("Node props: \n"+str(Node_props), debug)
+dataMod.log_debug(str(Pipe_props), debug)
 #[Pipe_props, max_elev, elev_out] = dataMod.get_pipe_elev_ind(Pipe_props, Node_props, sort_lst, node_srt_lst, In, res_elev)
 
 
@@ -285,8 +286,9 @@ dataMod.log_debug("Node props: \n"+str(Node_props), debug)
 
 dataMod.log_progress("Calculating the TDH for each pipe...")
 
-Pipe_props = calc.get_TDH(Pipe_props)
+Pipe_props = calc.get_TDH2(Pipe_props, Node_props, sort_lst, node_srt_lst)
 
+dataMod.log_debug(str(Pipe_props), debug)
 #dataMod.log_progress(str(Pipe_props))
 
 #dataMod.log_progress("...Done!")
@@ -299,6 +301,7 @@ dataMod.log_progress("Getting calculation statistics...")
 
 Calc_stats, Pipe_len = calc.get_calc_stats(Pipe_props, max_elev)
 
+dataMod.log_debug(str(Pipe_props), debug)
 #dataMod.log_progress("...Done!")
 
 dataMod.log_progress("Updating qgis vector layers...")
@@ -306,6 +309,7 @@ dataMod.log_progress("Updating qgis vector layers...")
 dataMod.update_pipes_vlay(Pipe_props, C_factor, l_material)
 dataMod.update_junctions_vlay(Node_props)
 
+dataMod.log_debug(str(Pipe_props), debug)
 
 #dataMod.log_progress("...Done!")
 
@@ -331,7 +335,7 @@ if zones is True:
     #dataMod.log_progress("Resorting report...")
     #
     #Pipe_props = Pipe_props.sort_values(by='Number Accumulated EDUs', ascending=False)
-    #                        
+    #
     #dataMod.log_progress("...Done!")
 
     dataMod.log_progress("Exporting .csv file on a per zone basis...")
@@ -345,7 +349,7 @@ if zones is True:
     Calc_inputs.to_csv(export_filepath+export_filename_inp)
 
 if zones is False:
-    
+
     dataMod.log_progress("Exporting .csv file on a per pipe basis...")
 
     Pipe_props.to_csv(export_filepath+export_filename)
@@ -355,8 +359,8 @@ if zones is False:
     Calc_inputs = dataMod.get_inputs_dataframe(inputs)
 
     Calc_inputs.to_csv(export_filepath+export_filename_inp)
-    
-    
+
+
 dataMod.log_progress("Applying QGIS styling...")
 
 dataMod.apply_pipe_styling()

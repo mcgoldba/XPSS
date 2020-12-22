@@ -162,7 +162,9 @@ class AddJunctionTool(QgsMapTool):
                             pattern_id,
                             emitter_coeff,
                             junction_desc,
-                            junction_tag)
+                            junction_tag,
+                            0,
+                            0)
 
                     else:
 
