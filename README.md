@@ -1,8 +1,6 @@
 # XPSS
-<<<<<<< HEAD
-A collection of scripts to solve a pressure sewer system.  Used as a QGIS plugin, largely based on QEPANet.
-=======
-A collection of scripts to solve a pressure sewer system.  Used as a QGIS plugin, largely based on QEPANET:
+
+A collection of scripts to solve a pressure sewer system.  Used as a QGIS plugin, largely based on QEPANET.
 
 https://gitlab.com/albertodeluca/qepanet
 
@@ -59,7 +57,6 @@ XPSS makes the additional assumptions about the system:
 
 *  Information on the layout and organization of the source code can be found in the [developer's guide](dev_guide/dev_guide.md) (**Work in Progress**)
 
-# No Warranty or Guarantee
+# No Warrant y or Guarantee
 
 This software is offered as is, without any warranty or guarantee.  Use at your own risk.
->>>>>>> 9552cedb051a5eedf9ead698183a8a1039ac1b13
