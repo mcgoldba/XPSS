@@ -1109,12 +1109,16 @@ class PSSCalc:
             9 Unknown
         """
 
+        import itertools
+
         canvas = qgis.utils.iface.mapCanvas()
         map_units = canvas.mapUnits()
+        layer_units = QgsDistanceArea().lengthUnits()
         units = qgis.core.QgsUnitTypes
 
-        dm.log_progress("Map units are: "+str(map_units))
-        dm.log_progress("XPSS units are set to: "+str(native_units))
+        dm.log_progress("Map units are: "+units.toString(map_units))
+        dm.log_progress("Vector layer units are: "+units.toString(layer_units))
+        dm.log_progress("XPSS units are set to: "+units.toString(native_units))
 
         # if map_units is not native_units:
         #
@@ -1144,10 +1148,15 @@ class PSSCalc:
         #
         #     Pipe_props = self.append_col_to_table(Pipe_props, Length, ['Length [ft]'], data_type='float')
 
-        Length = Pipe_props.iloc[:,Pipe_props.columns.get_loc('Length [ft]')].to_numpy()
+        factor = units.fromUnitToUnitFactor(layer_units, native_units)
+
+        Length = Pipe_props['Length [ft]'].to_numpy()
+        ID = Pipe_props['Pipe ID'].to_numpy()
         Length_ = []
-        for length in Length:
-            Length_.append(units.scaledDistance(length, units.DistanceFeet, 2))
+        for id, length in itertools.zip_longest(ID, Length):
+            l_calc = length*factor
+            dm.log_progress(str(id)+": "+str(l_calc))
+            Length_.append(l_calc)
 
         Pipe_props = dm.append_col_to_table(Pipe_props, Length, 'Length [ft]', data_type='float', replace=True)
 

@@ -8,7 +8,7 @@ import traceback
 from qgis.PyQt.QtCore import Qt, QPoint
 from qgis.PyQt.QtGui import QColor
 from qgis.PyQt.QtWidgets import QMenu
-from qgis.core import QgsGeometry, QgsSnappingConfig, Qgis, NULL
+from qgis.core import QgsGeometry, QgsSnappingConfig, Qgis, NULL, QgsCoordinateTransform, QgsProject
 from qgis.gui import QgsMapTool, QgsVertexMarker, QgsRubberBand
 
 from ..model.network import Pipe, Junction
@@ -17,7 +17,6 @@ from .parameters import Parameters
 from ..geo_utils import raster_utils, vector_utils
 from ..ui.section_editor import PipeSectionDialog
 from ..ui.diameter_dialog import DiameterDialog
-
 
 class AddPipeTool(QgsMapTool):
 
@@ -188,6 +187,18 @@ class AddPipeTool(QgsMapTool):
                 # There's a rubber band: create new pipe
                 if pipe_band_geom is not None:
 
+                    #XPSS ADDED - transform rubber band CRS
+                    canvas_crs = self.canvas().mapSettings().destinationCrs()
+                    #pipes_vlay = Parameters().pipes_vlay()
+                    #print(pipes_vlay)
+                    qepanet_crs = self.params.pipes_vlay.sourceCrs()
+                    crs_transform = QgsCoordinateTransform(
+                                        canvas_crs,
+                                        qepanet_crs,
+                                        QgsProject.instance()
+                                        )
+                    pipe_band_geom.transform(crs_transform)
+
                     # Finalize line
                     rubberband_pts = pipe_band_geom.asPolyline()[:-1]
 
@@ -230,7 +241,7 @@ class AddPipeTool(QgsMapTool):
                         zone_id = 0
                         velocity = 0
                         frictionloss = 0
-                        
+
 
                         pipe_ft = LinkHandler.create_new_pipe(
                             self.params,
@@ -254,7 +265,7 @@ class AddPipeTool(QgsMapTool):
                         new_pipes_eids.append(pipe_eid)
 
                     emitter_coeff_s = self.data_dock.txt_junction_emit_coeff.text()
-                    
+
                     if emitter_coeff_s is None or emitter_coeff_s == '':
                         emitter_coeff = float(0)
                     else:
@@ -269,7 +280,7 @@ class AddPipeTool(QgsMapTool):
                     zone_end = 0
                     pressure = 0
 
-                    
+
                     # Create start and end node, if they don't exist
                     (start_junction, end_junction) = NetworkUtils.find_start_end_nodes(self.params, new_pipes_fts[0].geometry())
                     new_start_junction = None
@@ -288,7 +299,7 @@ class AddPipeTool(QgsMapTool):
                                     5)  # TODO: softcode
                         deltaz = float(self.data_dock.txt_junction_deltaz.text())
                         j_demand = float(self.data_dock.txt_junction_demand.text())
-                        
+
                         pattern = self.data_dock.cbo_junction_pattern.itemData(
                             self.data_dock.cbo_junction_pattern.currentIndex())
                         if pattern is not None:

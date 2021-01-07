@@ -122,6 +122,10 @@ class AddJunctionTool(QgsMapTool):
             junction_desc = self.data_dock.txt_junction_desc.text()
             junction_tag = self.data_dock.cbo_junction_tag.currentText()
 
+            #- Additional items added for XPSS
+            zone_end = 0
+            pressure = 0
+
             # No links snapped: create a new stand-alone node
             if self.snapped_feat_id is None:
 
@@ -135,7 +139,10 @@ class AddJunctionTool(QgsMapTool):
                     pattern_id,
                     emitter_coeff,
                     junction_desc,
-                    junction_tag)
+                    junction_tag,
+                    zone_end,
+                    pressure
+                    )
 
             # A link has been snapped
             else:
@@ -163,8 +170,8 @@ class AddJunctionTool(QgsMapTool):
                             emitter_coeff,
                             junction_desc,
                             junction_tag,
-                            0,
-                            0)
+                            zone_end,
+                            pressure)
 
                     else:
 
@@ -194,7 +201,8 @@ class AddJunctionTool(QgsMapTool):
                                 emitter_coeff,
                                 junction_desc,
                                 junction_tag,
-                                zone_end)
+                                zone_end,
+                                pressure)
 
                             LinkHandler.split_pipe(
                                 self.params,

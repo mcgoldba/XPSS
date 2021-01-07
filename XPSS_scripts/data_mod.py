@@ -49,6 +49,8 @@ class PSSDataMod:
         self.junc_fts = pd.DataFrame(self.params.junctions_vlay.getFeatures(),columns=[field.name() for field in self.params.junctions_vlay.fields() ])  #extract pipe attribute table as a pandas array
         self.res_fts = pd.DataFrame(self.params.reservoirs_vlay.getFeatures(),columns=[field.name() for field in self.params.reservoirs_vlay.fields() ])  #extract pipe attribute table as a pandas array
 
+        self.lengthUnits = None
+
 
     def check(self, check_pipe_conns, check_node_conns):
         #TODO:  rewrite to use a pandas dataframe
@@ -360,21 +362,56 @@ class PSSDataMod:
 
         return Pipe_props
 
-    def get_qepanet_pipe_props2(self, Pipe_props, get_lst, pd_names, sort_lst=False):
+    def get_qepanet_pipe_props2(self, Pipe_props, get_lst, pd_names, calc_units=2, sort_lst=False):
         """{function}
             Initialize the Pipe_props dataframe using the derived length values of the Qgs feature
+
+            Parameters
+            ----------
+
+            calc_units : QgsDistanceUnit (int)
+                The length units to be used in XPSS calculations (default is 2 (feet))
+
         """
         distance = qgis.core.QgsDistanceArea()
+
+        layer = self.params.pipes_vlay
+
+        lyr_crs = layer.crs()
+
+        elps = QgsProject.instance().ellipsoid()
+        elps_crs = QgsCoordinateReferenceSystem()
+        elps_crs.createFromUserInput(elps)
+        self.log_progress("Map Ellipsoid: "+str(elps))
+
+        #transform = iface.mapCanvas().mapSettings().transformContext()
+        trans_context = QgsCoordinateTransformContext()
+        trans_context.calculateDatumTransforms(lyr_crs, elps_crs)
+
+        distance.setEllipsoid(elps)
+        distance.setSourceCrs(lyr_crs, trans_context)
+        units = qgis.core.QgsUnitTypes
 
         #get_lst is the qepanet parameter field name for the attribute
 
         #sort_lst = map(str, sort_lst)  #convert the array of ints to an array of strings
         #df = self.pipe_fts.filter(get_lst, axis=1) #extract columns from qepanet data
         len_ = []
-        features = self.params.pipes_vlay.getFeatures()
-        for feature in features:
-            len_.append(distance.measureLength(feature.geometry()))#extract length from the QgsFeature
+        lenUnits_ = []
+        features = layer.getFeatures()
+        crs_units = distance.ellipsoidCrs().mapUnits()
+        self.log_progress("Converting from "+units.toString(units.DistanceMeters)+" to "+units.toString(calc_units)+".")
+        factor = QgsUnitTypes.fromUnitToUnitFactor(units.DistanceMeters, calc_units) ## TODO: Soft code
+        self.log_progress("Conversion factor: "+str(factor))
 
+        for feature in features:
+            l_calc = distance.measureLength(feature.geometry())*factor
+            len_.append(l_calc)#extract length from the QgsFeature
+            self.log_progress(feature['id']+": "+str(l_calc))
+
+        self.lengthUnits = distance.lengthUnits()
+
+        self.log_progress(str(self.lengthUnits))
         Pipe_props = self.append_col_to_table(Pipe_props, len_, 'Length [ft]', data_type='float', sort=sort_lst)
 
         #df = pd.Dataframe(data=len_, columns=['Length [ft]'])

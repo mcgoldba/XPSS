@@ -243,9 +243,9 @@ dataMod.log_progress("Getting the length values from qepanet...")
 
 Pipe_props = dataMod.get_qepanet_pipe_props2(Pipe_props, ['length'], ['Length [ft]'])
 
-dataMod.log_progress("Converting length to XPSS units...")
+#dataMod.log_progress("Converting length to XPSS units...")
 
-Pipe_props = calc.convert_length(Pipe_props, units_dist)
+#Pipe_props = calc.convert_length(Pipe_props, units_dist)
 
 dataMod.log_debug("Node props: \n"+str(Node_props), debug)
 dataMod.log_debug(str(Pipe_props), debug)
