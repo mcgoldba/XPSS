@@ -229,14 +229,14 @@ class AddPipeTool(QgsMapTool):
                     for np in range(new_pipes_nr):
 
                         pipe_eid = NetworkUtils.find_next_id(self.params.pipes_vlay, Pipe.prefix)  # TODO: softcode
-                        demand = float(self.data_dock.txt_pipe_demand.text())
+                        #demand = float(self.data_dock.txt_pipe_demand.text())
                         diameter = float(self.data_dock.txt_pipe_diameter.text())
-                        loss = float(self.data_dock.txt_pipe_loss.text())
-                        roughness = float(self.data_dock.lbl_pipe_roughness_val_val.text())
-                        status = self.data_dock.cbo_pipe_status.currentText()
-                        material = self.data_dock.cbo_pipe_roughness.currentText()
-                        pipe_desc = self.data_dock.txt_pipe_desc.text()
-                        pipe_tag = self.data_dock.cbo_pipe_tag.currentText()
+                        #loss = float(self.data_dock.txt_pipe_loss.text())
+                        #status = self.data_dock.cbo_pipe_status.currentText()
+                        material = self.data_dock.cbo_pipe_mtl.currentText()
+                        roughness = float(self.data_dock.txt_roughness.text())
+                        #pipe_desc = self.data_dock.txt_pipe_desc.text()
+                        #pipe_tag = self.data_dock.cbo_pipe_tag.currentText()
                         num_edu = 1
                         zone_id = 0
                         velocity = 0
@@ -247,14 +247,14 @@ class AddPipeTool(QgsMapTool):
                             self.params,
                             pipe_eid,
                             diameter,
-                            loss,
+                            0,
                             roughness,
-                            status,
+                            " ",
                             material,
                             rubberband_pts[junct_nrs[np]:junct_nrs[np+1]+1],
                             True,
-                            pipe_desc,
-                            pipe_tag,
+                            " ",
+                            " ",
                             num_edu,
                             zone_id,
                             velocity,
@@ -264,18 +264,18 @@ class AddPipeTool(QgsMapTool):
                         new_pipes_fts.append(pipe_ft)
                         new_pipes_eids.append(pipe_eid)
 
-                    emitter_coeff_s = self.data_dock.txt_junction_emit_coeff.text()
+                    # emitter_coeff_s = self.data_dock.txt_junction_emit_coeff.text()
+                    #
+                    # if emitter_coeff_s is None or emitter_coeff_s == '':
+                    #     emitter_coeff = float(0)
+                    # else:
+                    #     emitter_coeff = float(self.data_dock.txt_junction_emit_coeff.text())
 
-                    if emitter_coeff_s is None or emitter_coeff_s == '':
-                        emitter_coeff = float(0)
-                    else:
-                        emitter_coeff = float(self.data_dock.txt_junction_emit_coeff.text())
-
-                    # Description
-                    junction_desc = self.data_dock.txt_junction_desc.text()
-
-                    # Tag
-                    junction_tag = self.data_dock.cbo_junction_tag.currentText()
+                    # # Description
+                    # junction_desc = self.data_dock.txt_junction_desc.text()
+                    #
+                    # # Tag
+                    # junction_tag = self.data_dock.cbo_junction_tag.currentText()
 
                     zone_end = 0
                     pressure = 0
@@ -297,17 +297,17 @@ class AddPipeTool(QgsMapTool):
                                     'Elevation value not available: element elevation set to 0.',
                                     Qgis.Warning,
                                     5)  # TODO: softcode
-                        deltaz = float(self.data_dock.txt_junction_deltaz.text())
-                        j_demand = float(self.data_dock.txt_junction_demand.text())
+                        deltaz = float(0)
+                        #j_demand = float(self.data_dock.txt_junction_demand.text())
 
-                        pattern = self.data_dock.cbo_junction_pattern.itemData(
-                            self.data_dock.cbo_junction_pattern.currentIndex())
-                        if pattern is not None:
-                            pattern_id = pattern.id
-                        else:
-                            pattern_id = None
+                        # pattern = self.data_dock.cbo_junction_pattern.itemData(
+                        #     self.data_dock.cbo_junction_pattern.currentIndex())
+                        # if pattern is not None:
+                        #     pattern_id = pattern.id
+                        # else:
+                        #     pattern_id = None
                         NodeHandler.create_new_junction(
-                            self.params, new_start_junction, junction_eid, elev, j_demand, deltaz, pattern_id, emitter_coeff, junction_desc, junction_tag, zone_end, pressure)
+                            self.params, new_start_junction, junction_eid, elev, 0, deltaz, None, 0, " ", " ", zone_end, pressure)
 
                     (start_junction, end_junction) = NetworkUtils.find_start_end_nodes(self.params, new_pipes_fts[len(new_pipes_fts) - 1].geometry())
                     new_end_junction = None
@@ -324,16 +324,16 @@ class AddPipeTool(QgsMapTool):
                                     'Elevation value not available: element elevation set to 0.',
                                     Qgis.Warning,
                                     5)  # TODO: softcode
-                        deltaz = float(self.data_dock.txt_junction_deltaz.text())
+                        deltaz = float(0)
 
-                        pattern = self.data_dock.cbo_junction_pattern.itemData(
-                            self.data_dock.cbo_junction_pattern.currentIndex())
-                        if pattern is not None:
-                            pattern_id = pattern.id
-                        else:
-                            pattern_id = None
+                        # pattern = self.data_dock.cbo_junction_pattern.itemData(
+                        #     self.data_dock.cbo_junction_pattern.currentIndex())
+                        # if pattern is not None:
+                        #     pattern_id = pattern.id
+                        # else:
+                        #     pattern_id = None
                         NodeHandler.create_new_junction(
-                            self.params, new_end_junction, junction_eid, elev, demand, deltaz, pattern_id, emitter_coeff, junction_desc, junction_tag, zone_end, pressure)
+                            self.params, new_end_junction, junction_eid, elev, 0, deltaz, None, 0, " ", " ", zone_end, pressure)
 
                     # If end or start node intersects a pipe, split it
                     if new_start_junction:

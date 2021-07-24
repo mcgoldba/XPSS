@@ -1,24 +1,24 @@
-# This file contains metadata for your plugin. Since 
-# version 2.0 of QGIS this is the proper way to supply 
-# information about a plugin. The old method of 
-# embedding metadata in __init__.py will 
+# This file contains metadata for your plugin. Since
+# version 2.0 of QGIS this is the proper way to supply
+# information about a plugin. The old method of
+# embedding metadata in __init__.py will
 # is no longer supported since version 2.0.
 
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=QEPANET
+name=XPSS
 qgisMinimumVersion=3.4
 qgisMaximumVersion=3.99
-description=This plugin links QGIS and EPANET. It provides: a set of dedicated editing tools to build a correct EPANET network, to run the simulation and to analyse the results by means of graphs and thematic maps.
-version=2.5
-author=UNIBZ - UNITN
-email=albertodeluca3@gmail.com
+description=This plugin performs for pressure sewer system calculations within QGIS.
+version=0.1
+author=Marc Goldbach
+email=mcgoldba@gmail.com
 
-about=This plugins links QGIS and EPANET: it helps creating the EPANET network and analysing the simulation results.
+about=This plugin performs for pressure sewer system calculations within QGIS.
 
-tracker=https://gitlab.com/albertodeluca/qepanet/issues
-repository=https://gitlab.com/albertodeluca/qepanet
+tracker=https://github.com/mcgoldba/XPSS/issues
+repository=https://github.com/mcgoldba/XPSS
 # End of mandatory metadata
 
 # Recommended items:
@@ -29,12 +29,11 @@ repository=https://gitlab.com/albertodeluca/qepanet
 # Tags are comma separated with spaces allowed
 tags=EPANET, hydraulics, hydraulic modelling
 
-homepage=https://gitlab.com/albertodeluca/qepanet
+homepage=https://github.com/mcgoldba/XPSS
 category=Plugins
 icon=icon.png
 # experimental flag
-experimental=False
+experimental=True
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
-

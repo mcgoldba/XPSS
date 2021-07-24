@@ -239,7 +239,7 @@ class InpReader(object):
                 tag = ''
                 if ndID[i] in tags_d:
                     tag = tags_d[ndID[i]]
-                
+
                 zone_end = 0
                 if ndID[i] in qepanet_junctions_zone_end_od:
                     zone_end = int(qepanet_junctions_zone_end_od[ndID[i]])
@@ -247,7 +247,7 @@ class InpReader(object):
                 pressure = 0
                 if ndID[i] in qepanet_junctions_pressure_od:
                     pressure = float(qepanet_junctions_pressure_od[ndID[i]])
-                    
+
                 featJ.setAttributes([ndID[i], ndEle[i] - delta_z, delta_z, ndPatID[i], ndBaseD[i], emitter_coeff,
                                      nodes_desc[i], tag, zone_end, pressure])
                 junctions_lay_dp.addFeatures([featJ])
@@ -454,15 +454,15 @@ class InpReader(object):
                     tag = ''
                     if linkID[i] in tags_d:
                         tag = tags_d[linkID[i]]
-                        
+
                     num_edu = 0
                     if linkID[i] in qepanet_pipes_edu_od:
                         num_edu = int(qepanet_pipes_edu_od[linkID[i]])
-                        
+
                     zone_id = 0
                     if linkID[i] in qepanet_pipes_zone_id_od:
                         zone_id = int(qepanet_pipes_zone_id_od[linkID[i]])
-                        
+
                     velocity = 0
                     if linkID[i] in qepanet_pipes_velocity_od:
                         velocity = float(qepanet_pipes_velocity_od[linkID[i]])
@@ -831,26 +831,34 @@ class InpReader(object):
             for line in lines:
                 if line.strip().startswith(';'):
                     continue
-                words = line.split()
+                words = [l.strip() for l in line.split('  ') if l] # split on 2 or more spaces and discard empty strings
                 #print("words: ", words)
                 spaces = re.findall(' +', line)  #extract the white space between words
                 #print("spaces: ", spaces)
-                if len(words) > 1:  
+                if len(words) > 1:
                     pipes_material_od[words[0].strip()] = words[1].strip()
                 if len(words) > 2:  #parses through line to find all words separted by a single space
-                    i=2
-                    while spaces[i-1] is ' ':
-                        pipes_material_od[words[0].strip()] = pipes_material_od[words[0].strip()] + (" "+words[i].strip())
-                        i +=1
-                    pipes_edu_od[words[0].strip()] = words[i].strip()
-                if len(words) > i+1:
+                    pipes_edu_od[words[0].strip()] = words[2].strip()
+                if len(words) > 3:
                     pipes_zone_id_od[words[0].strip()] = words[3].strip()
-                if len(words) > i+2:
+                if len(words) > 4:
                     pipes_velocity_od[words[0].strip()] = words[4].strip()
-                if len(words) > i+3:
+                if len(words) > 5:
                     pipes_frictionloss_od[words[0].strip()] = words[5].strip()
-                    
-        #print("pipe_material: ", pipes_material_od)            
+                # if len(words) > 2:  #parses through line to find all words separted by a single space
+                #     i=1
+                #     while spaces[i-1] is ' ':
+                #         pipes_material_od[words[0].strip()] = pipes_material_od[words[0].strip()] + (" "+words[i].strip())
+                #         i +=1
+                #     pipes_edu_od[words[0].strip()] = words[i].strip()
+                # if len(words) > i+1:
+                #     pipes_zone_id_od[words[0].strip()] = words[3].strip()
+                # if len(words) > i+2:
+                #     pipes_velocity_od[words[0].strip()] = words[4].strip()
+                # if len(words) > i+3:
+                #     pipes_frictionloss_od[words[0].strip()] = words[5].strip()
+
+        #print("pipe_material: ", pipes_material_od)
 
         return pipes_material_od, pipes_edu_od, pipes_zone_id_od, pipes_velocity_od, pipes_frictionloss_od
 

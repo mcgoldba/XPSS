@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- QEpanet
+XPSS
                                  A QGIS plugin
- This plugin links QGIS and EPANET.
+ This plugin perform pressure sewer system calculations within QGIS.
                              -------------------
-        begin                : 2016-07-04
-        copyright            : (C) 2016 by DICAM - UNITN
-        email                : albertodeluca3@gmail.com
+        begin                : 2021-07-21
         git sha              : $Format:%H$
+        copyright            :
+        email                : mcgoldba@gmail.com
+
  ***************************************************************************/
 
 /***************************************************************************
@@ -25,11 +26,11 @@
 
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name
-    """Load QEpanet class from file QEpanet.
+    """Load XPSS class from file XPSS.
 
     :param iface: A QGIS interface instance.
     :type iface: QgsInterface
     """
     #
-    from .qepanet import QEpanet
-    return QEpanet(iface)
+    from .xpss import XPSS
+    return XPSS(iface)

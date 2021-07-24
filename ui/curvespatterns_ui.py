@@ -424,7 +424,7 @@ class GraphDialog(QDialog):
                 item_x = self.table.item(row, 0)
                 item_y = self.table.item(row, 1)
 
-                if item_x.text() != '' and item_y.text() != '':
+                if item_x.text().strip() != '' and item_y.text().strip() != '':
                     xs.append(self.from_item_to_val(item_x))
                     ys.append(self.from_item_to_val(item_y))
 
