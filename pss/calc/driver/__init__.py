@@ -5,7 +5,7 @@ from XPSS.pss.calc import Calc
 class Driver(Calc, ABC):
     def __init__(self, dockwidget):
         super().__init__(dockwidget)
-        self.dockwidget = dockwidget
+        self.nEDU = None
 
     @abstractmethod
     def run(self, **kwargs):

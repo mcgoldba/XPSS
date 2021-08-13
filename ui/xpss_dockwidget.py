@@ -59,10 +59,15 @@ from .utils import prepare_label as pre_l, set_up_button
 from . import misc
 
 from ..pss.calc.driver.driverfactory import DriverFactory
+from ..pss.calc.nomdia.nomdiafactory import NomDiaFactory
 from ..pss.calc.flowheadrelations.flowheadrelationsfactory import FlowHeadRelationsFactory
 from ..pss.calc.opedumethod.opedumethodfactory import OpEduMethodFactory
 from ..pss.db.pipedatabase import PipeDatabase, PipeMaterial
-from ..pss.db.units import LengthUnits, FlowUnits
+from ..pss.db.units import LengthUnits, FlowUnits, VelocityUnits
+
+from XPSS.logger import Logger
+
+logger = Logger(debug=True)
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'xpss_dockwidget.ui'))
@@ -84,8 +89,10 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
         self.op_edu_table_path = config['XPSS']['op_edu_table_path']
         #self.flow_units = config['XPSS']['flow_units'].split()
         #self.length_units = config['XPSS']['length_units'].split()
-        self.pipe_db = PipeDatabase().load(self.pipe_db_file_path,
+        self.pipedb = PipeDatabase().load(self.pipe_db_file_path,
                                         self.pipe_rgh_db_file_path)
+
+        logger.debugger(str(self.pipedb.materials))
 
         self.params.attach(self)
 
@@ -181,21 +188,70 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
 
         #- Pipe Network
 
+        self.cbo_pipe_mtl.activated.connect(
+            self.cbo_pipe_mtl_activated)
+
+        self.cbo_pipe_dia_units.activated.connect(
+            self.cbo_pipe_dia_units_activated
+        )
+
+        self.cbo_pipe_dia.activated.connect(
+            self.cbo_pipe_dia_activated
+        )
+
         #- Solver
 
         driver = self.cbo_driver.currentText()
 
         self.txt_flowrate.setValidator(QDoubleValidator())
 
-        if driver == "Constant Flow":
+        if driver == "Constant Flow":  #TODO:  Soft code
             self.txt_flowrate.setText("11.0")
         else:
             self.txt_flowrate.setText("20.0")
 
         self.cbo_flow_units.setCurrentIndex(0)
 
+        #TODO: Update value on unit change
+        # self.cbo_flow_units.activated.connect(
+        #     self.cbo_flow_units_activated
+        # )
+
         self.cbo_friction_loss_eq.activated.connect(
             self.cbo_fricton_loss_eq_activated)
+
+        self.cbo_op_edu_method.activated.connect(
+            self.cbo_op_edu_method_activated)
+
+        #TODO: soft code
+        self.txt_epa_a.setText("{:.1f}".format(0.5))
+        self.txt_epa_b.setText("{:.1f}".format(20))
+
+        self.txt_epa_a.setValidator(QDoubleValidator())
+        self.txt_epa_b.setValidator(QDoubleValidator())
+
+        self.cbo_lat_pipe_sch.activated.connect(
+            self.cbo_lat_pipe_dia_activated
+        )
+
+        self.cbo_lat_pipe_dia_units.activated.connect(
+            self.cbo_lat_pipe_dia_units_activated
+        )
+
+        self.cbo_lat_pipe_dia.activated.connect(
+            self.cbo_lat_pipe_dia_activated
+        )
+        #self.cbo_lat_pipe_dia.setValidator(QDoubleValidator())
+
+        self.txt_min_vel.setText("{:.1f}".format(2.0))
+        self.txt_min_vel.setValidator(QDoubleValidator())
+
+        self.txt_max_vel.setText("{:.1f}".format(5.0))
+        self.txt_max_vel.setValidator(QDoubleValidator())
+
+        self.cbo_lat_pipe_mtl.activated.connect(
+            self.cbo_lat_pipe_mtl_activated)
+
 
         # Project File
 
@@ -206,11 +262,35 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
      # This method needed by Observable
     def update(self, observable):
     #     # Update components
-        self.update_drivers_combo()
+        #self.update_drivers_combo()
+        self.update_combo_from_factory_method(self.cbo_driver, DriverFactory)
         self.update_flow_units_combo()
-        self.update_pipe_material_combo()
-        self.update_pipe_diameter_units_combo()
+        self.update_velocity_units_combo(self.cbo_min_vel_units)
+        self.update_velocity_units_combo(self.cbo_max_vel_units)
+        self.update_pipe_material_combo(self.cbo_pipe_mtl,
+                                        self.cbo_pipe_dia_units)
+        self.update_pipe_material_combo(self.cbo_lat_pipe_mtl,
+                                        self.cbo_lat_pipe_dia_units)
+        self.update_pipe_schedule_combo(self.cbo_pipe_sch,
+                                        self.cbo_pipe_mtl.currentText())
+        self.update_pipe_schedule_combo(self.cbo_lat_pipe_sch,
+                                        self.cbo_lat_pipe_mtl.currentText())
+        self.update_pipe_diameter_units_combo(self.cbo_pipe_dia_units)
+        self.update_pipe_diameter_units_combo(self.cbo_lat_pipe_dia_units)
+        self.update_pipe_diameter_combo(
+            self.cbo_pipe_dia,
+            self.cbo_pipe_mtl.currentText(),
+            self.cbo_pipe_sch.currentText(),
+            self.cbo_pipe_dia_units.currentText()
+            )
+        self.update_pipe_diameter_combo(
+            self.cbo_lat_pipe_dia,
+            self.cbo_lat_pipe_mtl.currentText(),
+            self.cbo_lat_pipe_sch.currentText(),
+            self.cbo_lat_pipe_dia_units.currentText()
+            )
         self.update_friction_loss_eq_combo()
+        self.update_combo_from_factory_method(self.cbo_dia_method, NomDiaFactory)
         self.update_op_edu_method_combo()
         self.update_roughness_params()
     #     self.update_patterns_combo()
@@ -526,6 +606,49 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
     def cbo_pipe_roughness_activated(self):
         self.update_roughness_params(self.get_combo_current_data(self.cbo_pipe_roughness)[self.params.options.headloss])
 
+    def cbo_pipe_mtl_activated(self):
+        self.update_pipe_schedule_combo(self.cbo_pipe_sch,
+                                        self.cbo_pipe_mtl.currentText())
+    def cbo_lat_pipe_mtl_activated(self):
+        self.update_pipe_schedule_combo(self.cbo_lat_pipe_sch,
+                                        self.cbo_lat_pipe_mtl.currentText())
+        self.update_pipe_diameter_combo(self.cbo_lat_pipe_dia,
+                                        self.cbo_lat_pipe_mtl.currentText(),
+                                        self.cbo_lat_pipe_sch.currentText(),
+                                        self.cbo_lat_pipe_dia_units.currentText()
+                                        )
+
+    def cbo_pipe_dia_activated(self):
+        self.update_pipe_diameter_combo(self.cbo_pipe_dia,
+                                        self.cbo_pipe_mtl.currentText(),
+                                        self.cbo_pipe_sch.currentText(),
+                                        self.cbo_pipe_dia_units.currentText())
+
+    def cbo_lat_pipe_dia_activated(self):
+        self.update_pipe_diameter_combo(self.cbo_lat_pipe_dia,
+                                        self.cbo_lat_pipe_mtl.currentText(),
+                                        self.cbo_lat_pipe_sch.currentText(),
+                                        self.cbo_lat_pipe_dia_units.currentText()
+                                        )
+    def cbo_lat_pipe_dia_units_activated(self):
+        self.update_pipe_diameter_combo(self.cbo_lat_pipe_dia,
+                                        self.cbo_lat_pipe_mtl.currentText(),
+                                        self.cbo_lat_pipe_sch.currentText(),
+                                        self.cbo_lat_pipe_dia_units.currentText()
+                                        )
+    def cbo_pipe_dia_activated(self):
+        self.update_pipe_diameter_combo(self.cbo_pipe_dia,
+                                        self.cbo_pipe_mtl.currentText(),
+                                        self.cbo_pipe_sch.currentText(),
+                                        self.cbo_pipe_dia_units.currentText()
+                                        )
+    def cbo_pipe_dia_units_activated(self):
+        self.update_pipe_diameter_combo(self.cbo_pipe_dia,
+                                        self.cbo_pipe_mtl.currentText(),
+                                        self.cbo_pipe_sch.currentText(),
+                                        self.cbo_pipe_dia_units.currentText()
+                                        )
+
     def snap_tolerance_changed(self):
         if self.txt_snap_tolerance.text():
             self.params.snap_tolerance = (float(self.txt_snap_tolerance.text()))
@@ -533,6 +656,8 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
     def cbo_fricton_loss_eq_activated(self):
         self.update_roughness_params()
 
+    def cbo_op_edu_method_activated(self):
+        self.update_epa_coeff_status()
 
     def pattern_editor(self):
         pattern_dialog = GraphDialog(self, self.iface.mainWindow(), self.params, edit_type=GraphDialog.edit_patterns)
@@ -783,30 +908,57 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
         symbology.refresh_layer(self.iface.mapCanvas(), self.params.pumps_vlay)
         symbology.refresh_layer(self.iface.mapCanvas(), self.params.valves_vlay)
 
-    def update_drivers_combo(self):
-        self.cbo_driver.clear()
-        for driver in DriverFactory._registry.keys():
-            self.cbo_driver.addItem(driver)
+    # def update_drivers_combo(self):
+    #     self.cbo_driver.clear()
+    #     for driver in DriverFactory._registry.keys():
+    #         self.cbo_driver.addItem(driver)
 
     def update_flow_units_combo(self):
         self.cbo_flow_units.clear()
-        for unit in FlowUnits:
+        for unit in FlowUnits.keys():
             self.cbo_flow_units.addItem(str(unit))
 
-    def update_pipe_diameter_units_combo(self):
-        self.cbo_pipe_dia_units.clear()
+    def update_pipe_diameter_units_combo(self, cbo):
+        cbo.clear()
+        for unit in LengthUnits.keys():
+            cbo.addItem(str(unit))
+
+    def update_combo_from_factory_method(self, cbo, factorymethod):
+        cbo.clear()
+        for driver in factorymethod.registry.keys():
+            cbo.addItem(driver)
+
+    def update_pipe_diameter_combo(self, cbo, material, schedule, unitStr):
+        cbo.clear()
+        sch = self.pipedb.get(material, schedule)
+        units = LengthUnits[sch.baseunits]
+        logger.debugger("unitStr: "+str(unitStr))
+        for dia in sch.diameters.keys():
+            logger.debugger("dia: "+str(dia))
+            displayDia = (dia*units).to(LengthUnits[unitStr]).magnitude
+            cbo.addItem("{:.2f}".format(displayDia))
+
+    def update_velocity_units_combo(self, cbo):
+        cbo.clear()
+        for unit in VelocityUnits.keys():
+            cbo.addItem(str(unit))
+
+    def update_pipe_material_combo(self, cbo, cbo_units):
+        cbo.clear()
+
+        for material in self.pipedb.materials.keys():
+            cbo.addItem(material)
+
+
         for unit in LengthUnits:
-            self.cbo_pipe_dia_units.addItem(str(unit))
+            cbo_units.addItem(str(unit))
 
-    def update_pipe_material_combo(self):
-        self.cbo_pipe_mtl.clear()
+    def update_pipe_schedule_combo(self, cbo, material):
+        cbo.clear()
 
-        for material in self.pipe_db.materials.keys():
-            self.cbo_pipe_mtl.addItem(material)
+        for sch in self.pipedb.materials[material].schedules.keys():
+            cbo.addItem(sch)
 
-
-        for unit in LengthUnits:
-            self.cbo_pipe_dia_units.addItem(str(unit))
 
     def update_friction_loss_eq_combo(self):
         self.cbo_friction_loss_eq.clear()
@@ -820,7 +972,7 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
         for method in OpEduMethodFactory.registry.keys():
             self.cbo_op_edu_method.addItem(method)
 
-    def select_pipe_db_path_clicked(self):
+    def select_pipedb_path_clicked(self):
 
         #self.btn_project_load.setChecked(False)
 
@@ -887,7 +1039,7 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
         flowheadrelation = self.cbo_friction_loss_eq.currentText()
         material = self.cbo_pipe_mtl.currentText()
 
-        material = self.pipe_db.materials[material]
+        material = self.pipedb.materials[material]
 
         if flowheadrelation == "DarcyWeisbach":
             roughness = str(material.roughness)
@@ -903,6 +1055,12 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
         self.lbl_roughness.setText(roughness_lbl)
         self.txt_roughness.setText(roughness)
         self.txt_roughness_unit.setText(roughness_unit)
+
+    def update_epa_coeff_status(self):
+        if self.cbo_op_edu_method.currentText() == 'EPA':
+            self.frm_epa.setEnabled(True)
+        else:
+            self.frm_epa.setEnabled(False)
 
     def set_cursor(self, cursor_shape):
         cursor = QtGui.QCursor()

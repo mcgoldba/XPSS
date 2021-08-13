@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 class FlowHeadRelations(ABC):
-    def __init__(self):
+    def __init__(self, pssvars):
         pass
 
 

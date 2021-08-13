@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>381</width>
-    <height>689</height>
+    <width>391</width>
+    <height>757</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>391</width>
+    <height>89</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>XPSS</string>
@@ -37,8 +43,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>379</width>
-         <height>668</height>
+         <width>375</width>
+         <height>743</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -579,6 +585,20 @@
                      </layout>
                     </item>
                     <item>
+                     <layout class="QHBoxLayout" name="horizontalLayout_24">
+                      <item>
+                       <widget class="QLabel" name="lbl_pipe_sch">
+                        <property name="text">
+                         <string>Pipe Schedule</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QComboBox" name="cbo_pipe_sch"/>
+                      </item>
+                     </layout>
+                    </item>
+                    <item>
                      <layout class="QHBoxLayout" name="horizontalLayout_9">
                       <item>
                        <widget class="QLabel" name="lbl_pipe_diameter">
@@ -588,11 +608,7 @@
                        </widget>
                       </item>
                       <item>
-                       <widget class="QLineEdit" name="txt_pipe_diameter">
-                        <property name="text">
-                         <string>1.5</string>
-                        </property>
-                       </widget>
+                       <widget class="QComboBox" name="cbo_pipe_dia"/>
                       </item>
                       <item>
                        <widget class="QComboBox" name="cbo_pipe_dia_units"/>
@@ -622,7 +638,7 @@
                        <string>Check pipe connections</string>
                       </property>
                       <property name="checked">
-                       <bool>true</bool>
+                       <bool>false</bool>
                       </property>
                      </widget>
                     </item>
@@ -632,7 +648,7 @@
                        <string>Check node connectinos</string>
                       </property>
                       <property name="checked">
-                       <bool>true</bool>
+                       <bool>false</bool>
                       </property>
                      </widget>
                     </item>
@@ -657,9 +673,9 @@
                  <attribute name="title">
                   <string>Solver</string>
                  </attribute>
-                 <layout class="QVBoxLayout" name="verticalLayout_14">
+                 <layout class="QVBoxLayout" name="verticalLayout_18">
                   <item>
-                   <layout class="QVBoxLayout" name="verticalLayout_6">
+                   <layout class="QVBoxLayout" name="verticalLayout_15">
                     <item>
                      <layout class="QHBoxLayout" name="horizontalLayout_2">
                       <item>
@@ -697,7 +713,14 @@
                        </widget>
                       </item>
                       <item>
-                       <widget class="QLineEdit" name="txt_flowrate"/>
+                       <widget class="QLineEdit" name="txt_flowrate">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                       </widget>
                       </item>
                       <item>
                        <widget class="QComboBox" name="cbo_flow_units"/>
@@ -740,14 +763,204 @@
                      </layout>
                     </item>
                     <item>
+                     <widget class="QFrame" name="frm_epa">
+                      <property name="frameShape">
+                       <enum>QFrame::StyledPanel</enum>
+                      </property>
+                      <property name="frameShadow">
+                       <enum>QFrame::Raised</enum>
+                      </property>
+                      <layout class="QVBoxLayout" name="verticalLayout_16">
+                       <item>
+                        <layout class="QHBoxLayout" name="horizontalLayout_18">
+                         <item>
+                          <layout class="QVBoxLayout" name="verticalLayout_14">
+                           <item>
+                            <widget class="QLabel" name="lbl_eps_coeff">
+                             <property name="text">
+                              <string>EPA Coefficients:</string>
+                             </property>
+                             <property name="alignment">
+                              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <spacer name="horizontalSpacer">
+                             <property name="orientation">
+                              <enum>Qt::Horizontal</enum>
+                             </property>
+                             <property name="sizeHint" stdset="0">
+                              <size>
+                               <width>40</width>
+                               <height>20</height>
+                              </size>
+                             </property>
+                            </spacer>
+                           </item>
+                          </layout>
+                         </item>
+                         <item>
+                          <layout class="QVBoxLayout" name="verticalLayout_6">
+                           <item>
+                            <layout class="QHBoxLayout" name="horizontalLayout_16">
+                             <item>
+                              <widget class="QLabel" name="lbl_epa_a">
+                               <property name="text">
+                                <string>A</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item>
+                              <widget class="QLineEdit" name="txt_epa_a">
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </widget>
+                             </item>
+                            </layout>
+                           </item>
+                           <item>
+                            <layout class="QHBoxLayout" name="horizontalLayout_17">
+                             <item>
+                              <widget class="QLabel" name="lbl_epa_b">
+                               <property name="text">
+                                <string>B</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item>
+                              <widget class="QLineEdit" name="txt_epa_b">
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </widget>
+                             </item>
+                            </layout>
+                           </item>
+                          </layout>
+                         </item>
+                        </layout>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                    <item>
+                     <layout class="QHBoxLayout" name="horizontalLayout_25">
+                      <item>
+                       <widget class="QLabel" name="lbl_dia_method">
+                        <property name="text">
+                         <string>Pipe Diameter Method</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QComboBox" name="cbo_dia_method"/>
+                      </item>
+                     </layout>
+                    </item>
+                    <item>
+                     <layout class="QHBoxLayout" name="horizontalLayout_20">
+                      <item>
+                       <widget class="QLabel" name="lbl_lat_pipe_mtl">
+                        <property name="text">
+                         <string>Lateral Connection Material</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QComboBox" name="cbo_lat_pipe_mtl"/>
+                      </item>
+                     </layout>
+                    </item>
+                    <item>
+                     <layout class="QHBoxLayout" name="horizontalLayout_23">
+                      <item>
+                       <widget class="QLabel" name="lbl_lat_pipe_sch">
+                        <property name="text">
+                         <string>Lateral Conn. Pipe Schedule</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QComboBox" name="cbo_lat_pipe_sch"/>
+                      </item>
+                     </layout>
+                    </item>
+                    <item>
+                     <layout class="QHBoxLayout" name="horizontalLayout_19">
+                      <item>
+                       <widget class="QLabel" name="lbl_lat_pipe_dia">
+                        <property name="text">
+                         <string>Lateral Connection Dia</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QComboBox" name="cbo_lat_pipe_dia"/>
+                      </item>
+                      <item>
+                       <widget class="QComboBox" name="cbo_lat_pipe_dia_units"/>
+                      </item>
+                     </layout>
+                    </item>
+                    <item>
+                     <layout class="QHBoxLayout" name="horizontalLayout_21">
+                      <item>
+                       <widget class="QLabel" name="lbl_min_vel">
+                        <property name="text">
+                         <string>Min Velocity</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLineEdit" name="txt_min_vel">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QComboBox" name="cbo_min_vel_units"/>
+                      </item>
+                     </layout>
+                    </item>
+                    <item>
+                     <layout class="QHBoxLayout" name="horizontalLayout_22">
+                      <item>
+                       <widget class="QLabel" name="lbl_max_vel">
+                        <property name="text">
+                         <string>Max Velocity</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLineEdit" name="txt_max_vel">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QComboBox" name="cbo_max_vel_units"/>
+                      </item>
+                     </layout>
+                    </item>
+                    <item>
                      <spacer name="verticalSpacer_2">
                       <property name="orientation">
                        <enum>Qt::Vertical</enum>
                       </property>
                       <property name="sizeHint" stdset="0">
                        <size>
-                        <width>20</width>
-                        <height>40</height>
+                        <width>17</width>
+                        <height>13</height>
                        </size>
                       </property>
                      </spacer>

@@ -7,8 +7,7 @@ import pandas as pd
 import time
 import os
 
-from XPSS.pss.calc.operations import Operations
-from XPSS.pss.report import Report
+from XPSS.pss.calc.report import Report
 from XPSS.pss.calc.driver.driverfactory import DriverFactory
 from XPSS.pipedatabase import PipeMaterial, PipeClass
 

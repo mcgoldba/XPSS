@@ -9,17 +9,17 @@ class DriverFactory(Driver):
         super().__init__(dockwidget)
         self.dockwidget = dockwidget
 
-    _registry = {}
+    registry = {}
 
     @classmethod
     def register(cls, key):
         def wrapper(func, **kwargs):
-            cls._registry[key] = func
+            cls.registry[key] = func
         return wrapper
 
     #@classmethod
     def create(self, key, **kwargs):
-        driver = self.__class__._registry.get(key)
+        driver = self.__class__.registry.get(key)
         if not driver:
             logger.error("Invalid driver key provided: "+str(key))
             raise ValueError(key)

@@ -8,9 +8,24 @@ from XPSS.model.network_handling import NetworkUtils
 
 from XPSS.logger import Logger
 
-logger = Logger(debug=True)
+logger = Logger(debug=False)
 
 class PSS:
+
+    #from: https://stackoverflow.com/questions/4103773/efficient-way-of-having-a-function-only-execute-once-in-a-loop
+    def run_once(f):
+        def wrapper(*args, **kwargs):
+            if not wrapper.has_run:
+                wrapper.has_run = True
+                return f(*args, **kwargs)
+        wrapper.has_run = False
+        return wrapper
+
+    # Class variables
+    # sysGeomError = False
+    # numEntityErr s= False
+    # nPipes = None
+    # nNodes = None
 
     def __init__(self, dockwidget):
         #self.pipeProps = pd.DataFrame()
@@ -26,9 +41,16 @@ class PSS:
         [self.pipeProps, self.nodeProps, self.pipeNodeProps,
          self.res, self.res_elev] = self.initialize_from_qepanet()
 
-        [self.sysGeomError, self.numEntityErr, self.nPipes, self.nNodes] = \
-            self.check(self.checkPipeConns, self.checkNodeConns)
+        self.L = None
 
+        self.check(self.checkPipeConns, self.checkNodeConns)
+
+        logger.debugger("sysGeomError: "+str(PSS.sysGeomError))
+        logger.debugger("numEntityErr: "+str(PSS.numEntityErr))
+        logger.debugger("nPipes: "+str(PSS.nPipes))
+        logger.debugger("nNodes: "+str(PSS.nNodes))
+
+    @run_once
     def check(self, check_pipe_conns, check_node_conns):
         #TODO:  rewrite to use a pandas dataframe
 
@@ -230,11 +252,18 @@ class PSS:
         logger.progress("%%%%%%%%%%% END CHECK OF PSS SYSTEM %%%%%%%%%%%")
 
 
-        return [has_error, num_entity_err, l, j]
+        #return [has_error, num_entity_err, l, j]
+        #Note:  'PSS.' needed so dervived classes do not overwrite existing values
+        PSS.sysGeomError = has_error
+        PSS.numEntityErr = num_entity_err
+        PSS.nPipes = l
+        PSS.nNodes = j
 
     def initialize_from_qepanet(self):
-
-        #get system details from the qgis vector layers (a lot of this taken from in_writer.py in qepanet)
+        """
+        get system details from the qgis vector layers (a lot of this taken
+        from in_writer.py in qepanet)
+        """
 
 
         #Initalize data Matrices and vectors for calculations

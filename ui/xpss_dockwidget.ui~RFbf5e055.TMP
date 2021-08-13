@@ -423,7 +423,7 @@
                     <item>
                      <layout class="QVBoxLayout" name="verticalLayout_8">
                       <item>
-                       <widget class="QLabel" name="lbl_pipe_db">
+                       <widget class="QLabel" name="lbl_pipedb">
                         <property name="text">
                          <string>Pipe Diameter Database Location:</string>
                         </property>
@@ -432,10 +432,10 @@
                       <item>
                        <layout class="QHBoxLayout" name="horizontalLayout_5">
                         <item>
-                         <widget class="QLineEdit" name="txt_pipe_db"/>
+                         <widget class="QLineEdit" name="txt_pipedb"/>
                         </item>
                         <item>
-                         <widget class="QPushButton" name="bto_select_pipe_db">
+                         <widget class="QPushButton" name="bto_select_pipedb">
                           <property name="text">
                            <string>Select...</string>
                           </property>

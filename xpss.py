@@ -30,6 +30,7 @@ from qgis.gui import QgsVertexMarker
 from .tools.parameters import Parameters, ConfigFile
 from .geo_utils.utils import LayerUtils
 from .log_handler import LogHandler
+from .utils import get_root_dir
 
 # Initialize Qt resources from file resources.py
 
@@ -180,7 +181,7 @@ class XPSS(object):
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/XPSS/icon.png'
+        icon_path = os.path.join(get_root_dir(), 'icon.png')
         self.add_action(
             icon_path,
             text=self.tr(u'XPSS'),
@@ -262,7 +263,7 @@ class XPSS(object):
         config.read(config_path)
 
         # pump_db_file_path = config['XPSS']['pump_db_file_path']
-        # pipe_db_file_path = config['XPSS']['pipe_db_file_path']
+        # pipedb_file_path = config['XPSS']['pipedb_file_path']
         # pipe_rgh_db_file_path = config['XPSS']['pipe_rgh_db_file_path']
         # op_edu_table_path = config['XPSS']['op_edu_table_path']
 

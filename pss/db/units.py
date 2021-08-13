@@ -5,32 +5,22 @@ import pint
 
 from XPSS.logger import Logger
 
-#from XPSS.utils import get_root_dir
-
-# logger = Logger(debug=True)
-#
-# configfile = os.path.join(get_root_dir(), 'config.ini')
-#
-# logger.debugger('configfile: '+str(configfile))
-#
-# config = configparser.ConfigParser()
-# config.read(configfile)
-
 ureg = pint.UnitRegistry()
 
-LengthUnits = [ureg.inch, ureg.mm, ureg.ft, ureg.meter]
+LengthUnits = {
+    "in": ureg.inch,
+    "mm": ureg.mm,
+    "ft": ureg.ft,
+    "m": ureg.meter
+    }
 
-FlowUnits = [ureg.gallon/ureg.minute, ureg.litre / ureg.minute,
-              ureg.meter**3/ureg.second]
+FlowUnits = {
+    "gpm": ureg.gallon/ureg.minute,
+    "lpm": ureg.litre / ureg.minute,
+    "m^3/s": ureg.meter**3/ureg.second
+    }
 
-# class LengthUnits(Enum):
-#     in = auto()
-#     mm = auto()
-#     ft = auto()
-#     m = auto()
-#
-#
-# class FlowUnits(Enum):
-#     gpm = auto()
-#     lps = auto()
-#     m3s = auto()
+VelocityUnits = {
+    "ft/s": ureg.foot/ureg.second,
+    "m/s": ureg.meter/ureg.second
+    }

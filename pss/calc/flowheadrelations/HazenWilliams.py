@@ -1,7 +1,9 @@
 from .flowheadrelationsfactory import FlowHeadRelationsFactory
 
+from ..systemops import d, L, C
+
 @FlowHeadRelationsFactory.register('HazenWilliams')
-def HazenWilliams(d, L, C):
+def HazenWilliams(pssvars):
     """
     Hazen-Williams equation for friction losses in pipe.
 
@@ -32,6 +34,10 @@ def HazenWilliams(d, L, C):
         flowrate.
 
     """
+
+    d = d(pssvars)
+    L = L(pssvars)
+    C =
 
     def h_fn(Q):
         return 0.2083*(L/C)^1.852*Q^13852/(d^4.8655)

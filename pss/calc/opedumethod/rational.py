@@ -4,8 +4,8 @@ from XPSS.pss.calc.opedumethod.opedumethodfactory import OpEduMethodFactory
 
 @OpEduMethodFactory.register("Rational")
 class Rational(OpEduMethod):
-    def __init__(self, n):
-        super().__init__(n)
+    def __init__(self, dockwidget, n):
+        super().__init__(dockwidget, n)
 
     def calc(self):
         return 0

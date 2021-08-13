@@ -10,7 +10,7 @@ import scipy.linalg as sla
 from scipy import optimize
 from scipy.optimize import curve_fit
 from scipy.sparse import csr_matrix
-from XPSS.pss.report import Report
+from XPSS.pss.calc.report import Report
 from XPSS.pipedatabase import PipeMaterial, PipeClass
 
 from XPSS.pss import PSS
@@ -20,27 +20,37 @@ from XPSS.logger import Logger
 logger = Logger()
 
 class Calc(PSS):
-    PipeMaterialName = {}
-    PipeMaterialName[PipeMaterial.PVC] = 'PVC'
-    PipeMaterialName[PipeMaterial.HDPE] = 'HDPE'
-    PipeClassName = {}
-    PipeClassName[PipeClass.PVC_Sch40] = 'PVC Sch. 40'
-    PipeClassName[PipeClass.HDPE_DR11] = 'HDPE DR11'
+
     def __init__(self, dockwidget):
         super().__init__(dockwidget)
         self.Q = None # flowrates
         self.P = None # pressures
         self.Qc = None # flowrate corrections
         self.Pc = None #pressure corrections
-        self.S = None #Static heads (elevations)
+        self.dh = None #Static heads (elevations)
 
         [self.C, self.C_n, self.B, self.pipeProps,
         self.pipeSortList, self.nodeSortList] = \
         self.create_conn_matrix(self.pipeNodeProps, self.pipeProps,
                        self.nodeProps, self.res,
-                       self.numEntityErr, self.nPipes, self.nNodes)
+                       PSS.numEntityErr, PSS.nPipes,
+                       PSS.nNodes)
 
-        self.A = self.B[1:] 
+        self.A = np.array(self.B[1:]) #
+
+        #constant values:
+        self.n, _ = self.A.shape  #number of pipes / junctions
+        self.onesVec = np.ones((self.n,1), dtype=int)
+
+        self.nOpEDU = None
+        self.nEDU = None
+
+        self.nomDia = None # nominal diameter of pipes (np.array(n,1))
+        self.matl = None # pipe material
+        self.sch = None # pipe schedule
+
+        self.d = None #inner pipe diameter
+
 
     from .linearsolver import linearsolver
     #from .get_pump_curve import get_pump_curve

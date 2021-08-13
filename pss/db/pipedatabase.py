@@ -1,16 +1,18 @@
 import csv
 from enum import Enum, auto
 import re
+import numpy as np
 #from .units import LengthUnits
 
 from XPSS.logger import Logger
 
+logger = Logger(debug=False)
 
 from pint import UnitRegistry
 
-logger = Logger(debug=True)
-
 ureg = UnitRegistry()
+
+from XPSS.pss.db.units import LengthUnits
 
 class PipeDatabase:
     def __init__(self):
@@ -18,37 +20,49 @@ class PipeDatabase:
 
     def load(self, pipe_dia_filepath, pipe_rgh_filepath):
 
+        nPipeMatl = 0
+        # Read in pipe roughness database
         with open(pipe_rgh_filepath, newline='') as csvfile:
             reader = csv.reader(csvfile)
             headers = next(reader, None)
             for row in reader:
                 if (len(row) == 4 and all([v is not "" for v in row])):
-
+                    nPipeMatl+=1
                     self.materials.update(
                         {row[0]: PipeMaterial(row[0], row[1],
-                                              row[2],ureg[row[3]])}
+                                              row[2],row[3])}
                         )
+        if not nPipeMatl:
+            logger.error("Invalid pipr roughness database specification")
 
-
+        nPipeDia = 0
+        # Read in pipe diameters database
         with open(pipe_dia_filepath, newline='') as csvfile:
             reader = csv.reader(csvfile)
             headers = next(reader, None)
             for row in reader:
-                if (len(row) == 4 and all([v is not "" for v in row])):
+                if (len(row) == 5 and all([v is not "" for v in row])):
+                    nPipeDia+=1
                     [matl, sch, nom_dia, in_dia, unit] = row
+                    logger.debugger("schedule: "+str(sch))
                     try:
                         material = PipeMaterial.get(matl)
                     except ValueError:
                         logger.error("Pipe material '"+str(matl)+"' not found in "\
                                      "pipe roughness database")
                     if sch not in material.schedules.keys():
+                        logger.debugger("Adding pipe schedule "+str(sch))
                         material.schedules.update({sch: PipeSchedule(sch,
-                                                                   ureg[unit])})
-                    base_unit = material.schedules[sch].base_unit
+                                                                   unit)})
+                    base_unit = material.schedules[sch].baseunits
                     material.schedules[sch].diameters.update(
-                        {float(nom_dia)*ureg[unit].to(base_unit):
-                         float(in_dia)*ureg[unit].to(base_unit)}
+                        {float(nom_dia)*ureg[unit].to(base_unit).magnitude:
+                         float(in_dia)*ureg[unit].to(base_unit).magnitude}
                         )
+
+        if not nPipeDia:
+            logger.error("Invalid pipe diameter database specification.")
+
         return self
 
 
@@ -58,6 +72,56 @@ class PipeDatabase:
         except ValueError:
             logger.error("Pipe material '"+str(material)+"' not found in "\
                          "pipe roughness database")
+    def get(self, material, schedule=None, nomDia=None):
+        """
+        Convenience function to return the appropriate database object based on
+        the provided inputs.
+
+        Inputs                    | Returns
+        --------------------------|---------------
+        material                  | PipeMaterial
+        material, schedule        | PipeSchedule
+        material schedule, nomDia | inner_diameter
+
+        """
+
+
+        dim_error = "Inconsistent dimensions."
+
+        if isinstance(material, str):
+            if schedule and nomDia:
+                return self.materials[material].schedules[schedule].\
+                                diameters[nomDia]
+            elif schedule:
+                return self.materials[material].schedules[schedule]
+            else:
+                return self.materials[material]
+
+        elif isinstance(material, np.ndarray) and\
+        isinstance(schedule, np.ndarray) and isinstance(nomDia, np.ndarray):
+            if material.shape == schedule.shape == nomDia.shape:
+                #convert string fron byte like object
+                material = material.astype(str)
+                schedule = schedule.astype(str)
+                nomDia = nomDia.astype(float)
+
+                logger.debugger("diameters: "+str(self.materials[material[0][0]].schedules[schedule[0][0]].diameters.keys()))
+
+                return np.array([self.materials[mat].schedules[sch].\
+                            diameters[float(d)] for mat, sch, d in np.stack(
+                            (material.flatten(), schedule.flatten(),
+                            nomDia.flatten()), axis=1)])
+            else:
+                logger.error(dim_error)
+        elif isinstance(material, np.ndarray) and\
+        isinstance(schedule, np.ndarray):
+            if material.shape == schedule.shape:
+                return np.array([self.materials[mat].schedules[sch] for
+                    mat, sch in zip(material, schedule)])
+            else:
+                logger.error(dim_error)
+        else:
+                return np.array([self.materials[mat] for mat in material])
 
     def __repr__(self):
         return str("PipeDatabase("+str(self.materials)+")")
@@ -71,14 +135,21 @@ class PipeMaterial:
         self.name = str(name)
         self.cfactor = float(cfactor)
         self.roughness = float(roughness)
-        self.roughness_unit = roughness_unit
+        self.roughnessunit = roughness_unit
 
-        if self.roughness_unit.dimensionality != ureg.meter.dimensionality:
-            raise TypeError(self.roughness_unit)
+        if LengthUnits[self.roughnessunit].dimensionality !=\
+            ureg.meter.dimensionality:
+            logger.error("Invalid unit specification in database file: "+
+                         str(self.roughnessunit))
 
         self.instances.append(self)
 
         self.schedules = {}
+
+    def __repr__(self):
+        return str("PipeMaterial("+str(self.name)+", "+
+                   str(self.cfactor)+", "+str(self.roughness)+", "+
+                   str(self.roughnessunit)+", "+str(self.schedules)+")")
 
     @classmethod
     def get(cls, name):
@@ -91,16 +162,14 @@ class PipeMaterial:
 class PipeSchedule:
     def __init__(self, name, baseunits):
         self.name = str(name)
-        self.baseunits = None
+        self.baseunits = baseunits
         self.diameters = {}
 
-# class PipeDiameters:
-#     def __init__(self, nominal_dia=[], inner_dia=[]):
-#         self.diameters = {}
-#         self.units = LengthUnits()
-#
-#         for nd, id in zip(nominal_dia, inner_dia):
-#             self.diameters.update({nd: id})
-#
-#     def __repr__(self):
-#         return str("PipeDiameters("+str(self.units)+", "+str(self.diameters))
+        if LengthUnits[self.baseunits].dimensionality !=\
+            ureg.meter.dimensionality:
+            logger.error("Invalid unit specification in database file: "+
+                         str(self.baseunit))
+
+    def __repr__(self):
+        return str("PipeSchedule("+str(self.name)+", "+str(self.baseunits)+
+                ", "+str(self.diameters)+")")
