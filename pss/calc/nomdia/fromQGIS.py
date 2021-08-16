@@ -3,8 +3,8 @@ from XPSS.pss.calc.nomdia.nomdiafactory import NomDiaFactory
 
 @NomDiaFactory.register('From QGIS layer')
 class FromQGIS(NomDia):
-    def __init__(self, pssvars):
-        super().__init__(pssvars.dockwidget)
+    def __init__(self, data, params, pipedb):
+        super().__init__(data, params, pipedb)
 
     def get(self, **ignored):
         """

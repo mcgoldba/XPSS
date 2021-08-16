@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
-from XPSS.pss.calc import Calc
 
-class NomDia(Calc, ABC):
-    def __init__(self, pssvars):
-        super().__init__(pssvars.dockwidget)
+class NomDia(ABC):
+    def __init__(self, data, params, pipedb):
+        self.data = data
+        self.params = params
+        self.pipedb = pipedb
 
     @abstractmethod
     def get(self):

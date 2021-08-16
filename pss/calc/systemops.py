@@ -2,6 +2,13 @@ import numpy as np
 import math
 from copy import deepcopy
 
+#from PyQt5.QtCore import *
+#from PyQt5.QtGui import *
+from qgis.core import QgsProject, QgsCoordinateReferenceSystem, \
+    QgsCoordinateTransformContext, QgsUnitTypes
+
+import qgis.utils
+
 from XPSS.pss.db.pipedatabase import PipeDatabase
 from XPSS.pss.db.units import LengthUnits
 
@@ -9,7 +16,7 @@ from XPSS.pss.calc.nomdia.nomdiafactory import NomDiaFactory
 from XPSS.pss.calc.flowheadrelations.flowheadrelationsfactory import \
     FlowHeadRelationsFactory
 
-from .operations import read_pipedb
+from XPSS.pss.calc.operations import read_pipedb
 
 from XPSS.logger import Logger
 
@@ -65,37 +72,12 @@ def nAEDU(nEDU):
 
     return nAEDU.reshape(-1, 1)
 
-def Q(nOpEDU, flowrate):
-    """
-    Calculates the flowrate in a pipe based on the number of operating EDUs
-
-    Parameters
-    ----------
-
-    nOpEDU : np.array_like
-        THe number of operating edus
-
-    flowrate : float
-        The pump flowrate
-
-    Returns
-    -------
-
-    Q : np.array_like
-        The flowrate within each pipe
-
-    """
-    #TODO: Implement as Factory Method
-
-    return nOpEDU*flowrate
-
-
-def Area(pssvars, d=None):
+def Area(data, d=None):
     """calculate the pipe cross-sectional area from nominal pipe diameter"""
 
     material = self.dockwidget.txt_pip
 
-    pipedb = pssvars.dockwidget.pipedb
+    pipedb = data.dockwidget.pipedb
 
     if isinstance(material, str):
         latID = pipedb.get(material, sch, latDia)
@@ -108,73 +90,108 @@ def Area(pssvars, d=None):
 
     nomDia = np.empty(Q.shape)
 
-def v(pssvars):
+def v(data, params, pipedb):
     """Calculates velocity"""
 
-    return pssvars.Q/(math.pi*d(pssvars)**2/4)
+    d(data, params, pipedb)
 
-def d(pssvars):
+    logger.debugger("flow: "+str(data.Q))
+    logger.debugger("diameter: "+str(data.d))
+
+    return (data.Q/(math.pi*d(data, params, pipedb)**2/4)).to_base_units()
+
+def d(data, params, pipedb):
     "Inner pipe diameter."
-    if not pssvars.d:
+    if data.d is None:
 
-        read_pipedb(pssvars)
+        data = read_pipedb(data, params, pipedb)
 
-        logger.debugger("materials: "+str(pssvars.matl))
+        logger.debugger("materials: "+str(data.matl))
 
-        pssvars.d = pssvars.dockwidget.pipedb.get(
-            pssvars.matl, pssvars.sch, pssvars.nomDia)
+        data.d = pipedb.get(
+            data.matl, data.sch, data.nomDia)
 
-    return pssvars.d
+    return data.d
 
-def p(pssvars):
-    """Calculates the pressure from flowrate"""
+def p(data, params, pipedb):
+    """
+    Calculates the pressure from flowrate
 
-    return afl(pssvars) + dh(pssvars)
+    Parameters
+    ----------
 
+    data : Data()
+        The PSS calculation data object
 
-def afl(pssvars, force = False):
+    lossEqn
+
+    """
+
+    afl_ = afl(data, params, pipedb)
+
+    logger.debugger("afl units: "+str(afl_.units))
+    logger.debugger("dh units: "+str(data.dh.units))
+
+    return afl(data, params, pipedb) + data.dh
+
+def afl(data, params, pipedb, force = False):
     """Calculates the accumulated friction loss"""
 
-    if pssvars.afl is None or force == True:
-        pssvars.afl = np.add.accumulate(fl(pssvars))
+    if data.afl is None or force == True:
+        fl_ = fl(data, params, pipedb)
+        data.afl = np.add.accumulate(fl_.magnitude)*fl_.units
 
-    return pssvars.afl
+    return data.afl
 
-# def dp(pssvars, force = False):
+# def dp(data, force = False):
 #     """Calculate pressure change in a pipe"""
 #
-#     pssvars.p = hl(pssvars) + dh(pssvars)
+#     data.p = hl(data) + dh(data)
 
 
-def fl(pssvars, force=False):
+def fl(data, params, pipedb, force=False):
     """Calculates the friction loss in pipe"""
 
-    if pssvars.fl is None or force == True:
-        fhrelation = FlowHeadRelationsFactory(pssvars).create(
-            pssvars.dockwidget.cbo_friction_loss_eq.currentText())
-        pssvars.fl = fhrelation(pssvars.Q)
-    return pssvars.fl
+    #TODO: Call to FlowHeadRelations must be modified for each additional
+    #       derived class argument
 
-def dh(pssvars):
-    """Calculates the static head for nodes give elevations."""
+    if data.fl is None or force == True:
 
-    if pssvars.dh is None:
-        pssvars.dh = pssvars.nodeProps['Elevation [ft]'].to_numpy() - \
-                     pssvars.nodeProps['Elevation [ft]'].to_numpy()[0]
-    return pssvars.dh
+        logger.debugger("d: "+str(data.d))
+        logger.debugger("L: "+str(data.L))
+        logger.debugger("C: "+str(data.C))
+        C(data, params, pipedb)
+        logger.debugger("C: "+str(data.C))
 
-def C(pssvars):
+
+        fhrelation = FlowHeadRelationsFactory(d = data.d, L = data.L,
+            roughness = roughness(data, params, pipedb), C = C(data, params, pipedb),
+            pumps = data.pumps).create(params.lossEqn)
+        data.fl = fhrelation(data.Q)
+    return data.fl
+
+def C(data, params, pipedb):
     """Returns the appropriate Hazen-Williams coefficient"""
 
-    if pssvars.C is None:
-        read_pipedb(pssvars)
-        pssvars.C = np.array([pssvars.pipedb[mat].cfactor for mat in pssvars.material])
-    return pssvars.C
+    if data.C is None:
+        read_pipedb(data, params, pipedb)
+        data.C = np.array([pipedb.materials[mat].cfactor for mat in
+            data.matl.flatten()])
+    return data.C.reshape((-1,1))
 
-def L(pssvars):
+def roughness(data, params, pipedb):
+    """Returns the appropriate Darcy-Weisbach roughness coefficient"""
+
+    if data.roughness is None:
+        data = read_pipedb(data, params, pipedb)
+        data.roughness = np.array([pipedb.materials[mat].roughness for mat in
+        data.matl.flatten()], dtype="S24")
+    return data.roughness
+
+def L(data):
     """Get the pipe length from QGIS"""
 
-    if pssvars.L is None:
+    if data.L is None:
 
         distance = qgis.core.QgsDistanceArea()
 
@@ -185,7 +202,7 @@ def L(pssvars):
         elps = QgsProject.instance().ellipsoid()
         elps_crs = QgsCoordinateReferenceSystem()
         elps_crs.createFromUserInput(elps)
-        self.log_progress("Map Ellipsoid: "+str(elps))
+        logger.debugger("Map Ellipsoid: "+str(elps))
 
         #transform = iface.mapCanvas().mapSettings().transformContext()
         trans_context = QgsCoordinateTransformContext()
@@ -203,15 +220,20 @@ def L(pssvars):
         #df = self.pipe_fts.filter(get_lst, axis=1) #extract columns from qepanet data
         len_ = []
         features = layer.getFeatures()
-        self.log_progress("Converting from "+units.toString(units.DistanceMeters)+" to "+units.toString(calc_units)+".")
-        factor = QgsUnitTypes.fromUnitToUnitFactor(units.DistanceMeters, calc_units) ## TODO: Soft code
-        self.log_progress("Conversion factor: "+str(factor))
+        #logger.debugger("Converting from "+units.toString(units.DistanceMeters)+" to "+units.toString(calc_units)+".")
+        #factor = QgsUnitTypes.fromUnitToUnitFactor(units.DistanceMeters, calc_units) ## TODO: Soft code
+        #logger.debugger("Conversion factor: "+str(factor))
 
         for feature in features:
-            l_calc = distance.measureLength(feature.geometry())*factor
+            #l_calc = distance.measureLength(feature.geometry())*factor
+            #TODO: Soft code units
+            l_calc = distance.measureLength(feature.geometry())
             len_.append(l_calc)#extract length from the QgsFeature
-            self.log_progress(feature['id']+": "+str(l_calc))
+            logger.debugger(feature['id']+": "+str(l_calc))
 
-        pssvars.L = len_
 
-    return pssvars.L
+        data.L = np.array(len_)*LengthUnits['m']
+
+        logger.debugger("L: "+str(data.L))
+
+    return data.L.reshape((-1,1))

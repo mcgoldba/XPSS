@@ -1,9 +1,13 @@
 from .flowheadrelationsfactory import FlowHeadRelationsFactory
 
-from ..systemops import d, L, C
+from XPSS.pss.db.units import LengthUnits, FlowUnits
+
+from XPSS.logger import Logger
+
+logger = Logger(debug=True)
 
 @FlowHeadRelationsFactory.register('HazenWilliams')
-def HazenWilliams(pssvars):
+def HazenWilliams(d=None, L=None, C=None, **ignored):
     """
     Hazen-Williams equation for friction losses in pipe.
 
@@ -35,11 +39,17 @@ def HazenWilliams(pssvars):
 
     """
 
-    d = d(pssvars)
-    L = L(pssvars)
-    C =
+    d = d.to("inch").magnitude
+    L = L.to("feet").magnitude
+    # C = self.C(pssvars)
+
+    logger.debugger("diameter shape: "+str(d.shape))
+    logger.debugger("length shape: "+str(L.shape))
+    logger.debugger("C-factor shape: "+str(C.shape))
 
     def h_fn(Q):
-        return 0.2083*(L/C)^1.852*Q^13852/(d^4.8655)
+        Q = Q.to(FlowUnits["gpm"])
+        fl_ = (0.2083*(L/C)**1.852*Q**1.852/(d**4.8655)).magnitude
+        return (fl_*LengthUnits['ft']).to_base_units()
 
     return h_fn

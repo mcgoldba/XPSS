@@ -71,10 +71,16 @@ class InpReader(object):
         tags_d = {}
 
         # Check for QEPANET section in inp file. If it's there, update layer attributes
-        qepanet_junctions_elevcorr_od, qepanet_junctions_zone_end_od, qepanet_junctions_pressure_od = self.read_qepanet_junctions()
+        qepanet_junctions_elevcorr_od, qepanet_junctions_zone_end_od, \
+            qepanet_junctions_pressure_od, qepanet_junctions_pressure_units_od = \
+            self.read_qepanet_junctions()
         qepanet_tanks_od = self.read_qepanet_tanks()
         (qepanet_reservoirs_deltaz_od, qepanet_reservoirs_press_head_od) = self.read_qepanet_reservoirs()
-        (qepanet_pipes_material_od, qepanet_pipes_edu_od, qepanet_pipes_zone_id_od, qepanet_pipes_velocity_od, qepanet_pipes_frictionloss_od) = self.read_qepanet_pipes()
+        (qepanet_pipes_material_od, qepanet_pipes_edu_od,
+         qepanet_pipes_zone_id_od, qepanet_pipes_velocity_od,
+          qepanet_pipes_frictionloss_od, qepanet_pipes_length_units_od,
+          qepanet_pipes_diameter_units_od, qepanet_pipes_velocity_units_od,
+          qepanet_pipes_frictionloss_units_od) = self.read_qepanet_pipes()
         qepanet_vertices_od = self.read_qepanet_vertices()
 
         # Create layers and update
@@ -248,8 +254,14 @@ class InpReader(object):
                 if ndID[i] in qepanet_junctions_pressure_od:
                     pressure = float(qepanet_junctions_pressure_od[ndID[i]])
 
-                featJ.setAttributes([ndID[i], ndEle[i] - delta_z, delta_z, ndPatID[i], ndBaseD[i], emitter_coeff,
-                                     nodes_desc[i], tag, zone_end, pressure])
+                pressure_units = 'meter'
+                if ndID[i] in qepanet_junctions_pressure_units_od:
+                    pressure_units = qepanet_junctions_pressure_units_od[ndID[i]]
+
+                featJ.setAttributes([ndID[i], ndEle[i] - delta_z, delta_z,
+                                     ndPatID[i], ndBaseD[i], emitter_coeff,
+                                     nodes_desc[i], tag, zone_end, pressure,
+                                     pressure_units])
                 junctions_lay_dp.addFeatures([featJ])
                 self.params.nodes_sindex.addFeature(featJ)
 
@@ -471,9 +483,28 @@ class InpReader(object):
                     if linkID[i] in qepanet_pipes_frictionloss_od:
                         frictionloss = float(qepanet_pipes_frictionloss_od[linkID[i]])
 
+                    length_units = 'meters'
+                    if linkID[i] in qepanet_pipes_length_units_od:
+                        length_units = qepanet_pipes_length_units_od[linkID[i]]
+
+                    diameter_units = 'mm'
+                    if linkID[i] in qepanet_pipes_diameter_units_od:
+                        diameter_units = qepanet_pipes_diameter_units_od[linkID[i]]
+
+                    velocity_units = 'm/s'
+                    if linkID[i] in qepanet_pipes_velocity_units_od:
+                        velocity_units = qepanet_pipes_velocity_units_od[linkID[i]]
+
+                    frictionloss_units = 'm'
+                    if linkID[i] in qepanet_pipes_frictionloss_units_od:
+                        frictionloss_units = qepanet_pipes_frictionloss_units_od[linkID[i]]
+
                     featPipe.setAttributes(
                         [linkID[i], linkLengths[i], linkDiameters[i], stat[i],
-                         linkRough[i], linkMinorloss[i], material, link_descs[i], tag, num_edu, zone_id, velocity, frictionloss])
+                         linkRough[i], linkMinorloss[i], material,
+                         link_descs[i], tag, num_edu, zone_id, velocity,
+                         frictionloss, length_units, diameter_units,
+                         velocity_units, frictionloss_units])
                     pipes_lay_dp.addFeatures([featPipe])
                     self.params.nodes_sindex.addFeature(featPipe)
 
@@ -774,6 +805,7 @@ class InpReader(object):
         junctions_elevcorr_od = OrderedDict()
         junctions_zone_end_od = OrderedDict()
         junctions_pressure_od = OrderedDict()
+        junctions_pressure_units_od = OrderedDict()
         if lines is not None:
             for line in lines:
                 if line.strip().startswith(';'):
@@ -782,11 +814,15 @@ class InpReader(object):
                 if len(words) > 1:
                     junctions_elevcorr_od[words[0].strip()] = float(words[1].strip())
                 if len(words) > 2:
-                    junctions_zone_end_od[words[0].strip()] = float(words[2].strip())
+                    junctions_zone_end_od[words[0].strip()] = int(words[2].strip())
                 if len(words) > 3:
                     junctions_pressure_od[words[0].strip()] = float(words[3].strip())
+                if len(words) > 4:
+                    junctions_pressure_units_od[words[0].strip()] = \
+                        words[4].strip()
 
-        return junctions_elevcorr_od, junctions_zone_end_od, junctions_pressure_od
+        return junctions_elevcorr_od, junctions_zone_end_od, \
+                junctions_pressure_od, junctions_pressure_units_od
 
     def read_qepanet_reservoirs(self):
 
@@ -826,7 +862,11 @@ class InpReader(object):
         pipes_edu_od = OrderedDict()
         pipes_zone_id_od = OrderedDict()
         pipes_velocity_od = OrderedDict()
+        pipes_velocity_units_od = OrderedDict()
         pipes_frictionloss_od = OrderedDict()
+        pipes_frictionloss_units_od = OrderedDict()
+        pipes_length_units_od = OrderedDict()
+        pipes_diameter_units_od = OrderedDict()
         if lines is not None:
             for line in lines:
                 if line.strip().startswith(';'):
@@ -845,6 +885,17 @@ class InpReader(object):
                     pipes_velocity_od[words[0].strip()] = words[4].strip()
                 if len(words) > 5:
                     pipes_frictionloss_od[words[0].strip()] = words[5].strip()
+                if len(words) > 6:
+                    pipes_length_units_od[words[0].strip()] = \
+                        words[6].strip()
+                if len(words) > 7:
+                    pipes_diameter_units_od[words[0].strip()] = \
+                        words[7].strip()
+                if len(words) > 8:
+                    pipes_velocity_units_od[words[0].strip()] = words[8].strip()
+                if len(words) > 9:
+                    pipes_frictionloss_units_od[words[0].strip()] = \
+                        words[9].strip()
                 # if len(words) > 2:  #parses through line to find all words separted by a single space
                 #     i=1
                 #     while spaces[i-1] is ' ':
@@ -860,7 +911,10 @@ class InpReader(object):
 
         #print("pipe_material: ", pipes_material_od)
 
-        return pipes_material_od, pipes_edu_od, pipes_zone_id_od, pipes_velocity_od, pipes_frictionloss_od
+        return pipes_material_od, pipes_edu_od, pipes_zone_id_od, \
+            pipes_velocity_od, pipes_frictionloss_od, pipes_length_units_od, \
+            pipes_diameter_units_od, pipes_velocity_units_od, \
+            pipes_frictionloss_units_od
 
     def read_qepanet_vertices(self):
 

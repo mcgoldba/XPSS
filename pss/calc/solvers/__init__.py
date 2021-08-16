@@ -2,10 +2,9 @@
 from abc import ABC, abstractmethod
 from XPSS.pss.calc import Calc
 
-class Driver(Calc, ABC):
-    def __init__(self, dockwidget):
-        super().__init__(dockwidget)
-        self.nEDU = None
+class Solver(Calc, ABC):
+    def __init__(self, params, pipedb, data):
+        super().__init__(params, pipedb, data)
 
     @abstractmethod
     def run(self, **kwargs):
@@ -16,6 +15,6 @@ class Driver(Calc, ABC):
     # def create(cls, key, **kwargs):
     #     pass
 
-#from .driverfactory import DriverFactory
+#from .solverfactory import DriverFactory
 from .constantflow import ConstantFlow
 from .centrifugal import Centrifugal

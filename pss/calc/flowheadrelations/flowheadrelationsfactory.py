@@ -4,8 +4,9 @@ from XPSS.pss.calc.flowheadrelations import FlowHeadRelations
 logger = Logger()
 
 class FlowHeadRelationsFactory(FlowHeadRelations):
-    def __init__(self, pssvars):
-        self.pssvars = pssvars
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
+        self.kwargs = kwargs
 
     registry = {}
 
@@ -16,10 +17,10 @@ class FlowHeadRelationsFactory(FlowHeadRelations):
         return wrapper
 
     #@classmethod
-    def create(self, key, **kwargs):
+    def create(self, key):
         fhrelation = self.__class__.registry.get(key)
         if not fhrelation:
             logger.error("Invalid driver key provided: "+str(key))
             raise ValueError(key)
         #return fhrelation(self.Cf, self.r, **kwargs)
-        return fhrelation(self.pssvars, **kwargs)
+        return fhrelation(**self.kwargs)

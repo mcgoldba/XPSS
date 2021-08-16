@@ -4,6 +4,11 @@ from qgis.core import *
 
 import qgis.utils
 
+from .nomdia.nomdiafactory import NomDiaFactory
+
+from XPSS.logger import Logger
+
+logger = Logger(debug=False)
 
 def dsConn(pssvars):
     pipeID = pssvars.pipeProps["Pipe ID"]
@@ -13,11 +18,19 @@ def dsConn(pssvars):
 
     return dsConn
 
-def read_pipedb(pssvars, force=False):
+def read_pipedb(data, params, pipedb, force=False):
 
-    if not any([pssvars.nomDia, pssvars.matl, pssvars.sch]) or force == True:
+    logger.debugger("nomDia: "+str(data.nomDia))
+    logger.debugger("matl: "+str(data.matl))
+    logger.debugger("sch: "+str(data.sch))
 
-        nomdiamethod = NomDiaFactory(pssvars).create(
-            pssvars.dockwidget.cbo_dia_method.currentText())
+    if (any(item is None for item in [data.nomDia, data.matl, data.sch]) or
+        force == True):
 
-        [pssvars.nomDia, pssvars.matl, pssvars.sch] = nomdiamethod.get()
+        logger.debugger("Populating pipe properties")
+
+        nomdiamethod = NomDiaFactory(data, params, pipedb).create(params.nomDiaMethod)
+
+        [data.nomDia, data.matl, data.sch] = nomdiamethod.get()
+
+    return data

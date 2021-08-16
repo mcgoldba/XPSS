@@ -1,4 +1,3 @@
-
 from qgis.core import QgsMessageLog
 from qgis.utils import iface
 
@@ -14,7 +13,7 @@ class Logger:
 
         iface.messageBar().pushWarning("XPSS Warning", message)
 
-    def error(self, message, stop=False):
+    def error(self, message, stop=True):
         QgsMessageLog.logMessage(message, tag="XPSS Progress Log", level=2)
 
         iface.messageBar().pushCritical("XPSS Error", message)

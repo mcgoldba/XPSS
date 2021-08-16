@@ -367,7 +367,7 @@ class InpFile(object):
             pattern = j_ft.attribute(Junction.field_name_pattern)
             description = j_ft.attribute(Junction.field_name_description)
             tag_name = j_ft.attribute(Junction.field_name_tag)
-            zone_end = int(j_ft.attribute(Junction.field_name_zone_end))
+            #zone_end = int(j_ft.attribute(Junction.field_name_zone_end))
 
 
             if pattern == NULL:
@@ -381,9 +381,6 @@ class InpFile(object):
 
             if tag_name is not None and tag_name != NULL and tag_name != '':
                 self.tags.append(Tag(Tag.element_type_node, eid, tag_name))
-
-            if zone_end is None or zone_end == NULL:
-                zone_end = 0
 
             elev += delta_z
 
@@ -520,14 +517,20 @@ class InpFile(object):
             end_node_id = adj_nodes[1].attribute(Junction.field_name_eid)
 
             length = pipe_ft.attribute(Pipe.field_name_length)
+            #length_units = pipe_ft.attribute(QPipe.field_name_length_units)
             diameter = pipe_ft.attribute(Pipe.field_name_diameter)
+            #diameter_units = pipe_ft.attribute(QPipe.field_name_diameter_units)
             roughness = pipe_ft.attribute(Pipe.field_name_roughness)
             minor_loss = pipe_ft.attribute(Pipe.field_name_minor_loss)
             status = pipe_ft.attribute(Pipe.field_name_status)
             description = pipe_ft.attribute(Pipe.field_name_description)
             tag_name = pipe_ft.attribute(Pipe.field_name_tag)
-            num_edu = int(pipe_ft.attribute(Pipe.field_name_num_edu))
-            zone_id = int(pipe_ft.attribute(Pipe.field_name_zone_id))
+            #num_edu = int(pipe_ft.attribute(QPipe.field_name_num_edu))
+            #zone_id = int(pipe_ft.attribute(QPipe.field_name_zone_id))
+            #velocity = float(pipe_ft.attribute(QPipe.field_name_velocity))
+            #velocity_units = pipe_ft.attribute(QPipe.field_name_velocity_units)
+            #friction_loss = float(pipe_ft.attribute(QPipe.field_name_frictionloss))
+            #friction_loss_units = pipe_ft.attribute(QPipe.field_name_frictionloss_units)
 
 
             # Line
@@ -538,10 +541,12 @@ class InpFile(object):
                 line += InpFile.pad('{0:.2f}'.format(length), InpFile.pad_19)
             else:
                 line += InpFile.pad(length, InpFile.pad_19)
+            #line += InpFile.pad(length_units, InpFile.pad_19)
             if not isinstance(diameter, unicode):
                 line += InpFile.pad('{0:.2f}'.format(diameter), InpFile.pad_19)
             else:
                 line += InpFile.pad(diameter, InpFile.pad_19)
+            #line += InpFile.pad(diameter_units, InpFile.pad_19)
             if not isinstance(roughness, unicode):
                 line += InpFile.pad('{0:.2f}'.format(roughness), InpFile.pad_19)
             else:
@@ -550,7 +555,14 @@ class InpFile(object):
                 line += InpFile.pad('{0:.2f}'.format(minor_loss), InpFile.pad_19)
             else:
                 line += InpFile.pad(minor_loss, InpFile.pad_19)
-            line += InpFile.pad(status)
+            line += InpFile.pad(status, InpFile.pad_19)
+            #line += InpFile.pad(num_edu, InpFile.pad_19)
+            #line += InpFile.pad(zone_id, InpFile.pad_19)
+            #line += InpFile.pad(velocity, InpFile.pad_19)
+            #line += InpFile.pad(velocity_units, InpFile.pad_19)
+            #line += InpFile.pad(frictionloss, InpFile.pad_19)
+            #line += InpFile.pad(frictionloss_units, InpFile.pad_19)
+
 
             if description is not None and description != '':
                 line += ';' + description
@@ -563,16 +575,13 @@ class InpFile(object):
             #else:
             #    line += InpFile.pad(num_edu, InpFile.pad_19)
             #
-            #if zone_id != NULL:
+            # if zone_id != NULL:
             #    if not isinstance(zone_id, unicode):
             #        line += InpFile.pad('{0:.2f}'.format(zone_id), InpFile.pad_19)
             #    else:
             #        line += InpFile.pad(zone_id, InpFile.pad_19)
-            #else:
+            # else:
             #    zone_id = 0
-
-
-
 
             out.append(line)
 
@@ -872,21 +881,24 @@ class InpFile(object):
 
         j_fts = params.junctions_vlay.getFeatures()
         for j_ft in j_fts:
-            eid = j_ft.attribute(Junction.field_name_eid)
-            delta_z = float(j_ft.attribute(Junction.field_name_delta_z))
-            zone_end = int(j_ft.attribute(Junction.field_name_zone_end))
-            pressure = float(j_ft.attribute(Junction.field_name_pressure))
+            eid = j_ft.attribute(QJunction.field_name_eid)
+            delta_z = float(j_ft.attribute(QJunction.field_name_delta_z))
+            zone_end = int(j_ft.attribute(QJunction.field_name_zone_end))
+            pressure = float(j_ft.attribute(QJunction.field_name_pressure))
+            pressure_units = j_ft.attribute(QJunction.field_name_pressure_units)
             if zone_end == NULL:
                 zone_end = 0
             if pressure == NULL:
                 pressure = 0
+            if pressure_units == NULL:
+                pressure = 'meter'
 
             # Line
             line = InpFile.pad(eid, InpFile.pad_19)
             line += InpFile.pad('{0:.2f}'.format(delta_z), InpFile.pad_19)
             line += InpFile.pad("{:.0f}".format(zone_end), InpFile.pad_19)
-            line += InpFile.pad("{:.2f}".format(pressure))
-
+            line += InpFile.pad("{:.2f}".format(pressure), InpFile.pad_19)
+            line += InpFile.pad(pressure_units)
 
             out.append(line)
 
@@ -928,13 +940,17 @@ class InpFile(object):
 
         p_fts = params.pipes_vlay.getFeatures()
         for p_ft in p_fts:
-            eid = p_ft.attribute(Pipe.field_name_eid)
-            material = p_ft.attribute(Pipe.field_name_material)
-            num_edu = int(p_ft.attribute(Pipe.field_name_num_edu))
+            eid = p_ft.attribute(QPipe.field_name_eid)
+            material = p_ft.attribute(QPipe.field_name_material)
+            num_edu = int(p_ft.attribute(QPipe.field_name_num_edu))
             # print 'material', material, type(material)
-            zone_id = int(p_ft.attribute(Pipe.field_name_zone_id))
-            velocity = float(p_ft.attribute(Pipe.field_name_velocity))
-            frictionloss = float(p_ft.attribute(Pipe.field_name_frictionloss))
+            zone_id = int(p_ft.attribute(QPipe.field_name_zone_id))
+            velocity = float(p_ft.attribute(QPipe.field_name_velocity))
+            velocity_units = p_ft.attribute(QPipe.field_name_velocity_units)
+            frictionloss = float(p_ft.attribute(QPipe.field_name_frictionloss))
+            frictionloss_units = p_ft.attribute(QPipe.field_name_frictionloss_units)
+            length_units = p_ft.attribute(QPipe.field_name_length_units)
+            diameter_units = p_ft.attribute(QPipe.field_name_diameter_units)
 
             if material == NULL:
                 material = ''
@@ -944,9 +960,16 @@ class InpFile(object):
                 zone_id == 0
             if velocity == NULL:
                 velocity = 0
+            if velocity_units == NULL:
+                velocity_units = 'm/s'
             if frictionloss == NULL:
                 frictionloss = 0
-
+            if frictionloss_units == NULL:
+                frictionloss_units = 'm/s'
+            if length_units == NULL:
+                length_units = 'm'
+            if diameter_units == NULL:
+                diameter_units = 'mm'
 
             # Line
             line = InpFile.pad(eid, InpFile.pad_19)
@@ -954,7 +977,11 @@ class InpFile(object):
             line += InpFile.pad("{:.0f}".format(num_edu), InpFile.pad_19)
             line += InpFile.pad("{:.0f}".format(zone_id), InpFile.pad_19)
             line += InpFile.pad("{:.2f}".format(velocity), InpFile.pad_19)
-            line += InpFile.pad("{:.2f}".format(frictionloss))
+            line += InpFile.pad("{:.2f}".format(frictionloss), InpFile.pad_19)
+            line += InpFile.pad(length_units, InpFile.pad_19)
+            line += InpFile.pad(diameter_units, InpFile.pad_19)
+            line += InpFile.pad(velocity_units, InpFile.pad_19)
+            line += InpFile.pad(frictionloss_units)
 
             out.append(line)
 

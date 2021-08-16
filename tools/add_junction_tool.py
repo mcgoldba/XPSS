@@ -103,8 +103,11 @@ class AddJunctionTool(QgsMapTool):
             else:
                 elev = self.elev
 
-            j_demand = float(self.data_dock.txt_junction_demand.text())
-            deltaz = float(self.data_dock.txt_junction_deltaz.text())
+            #j_demand = float(self.data_dock.txt_junction_demand.text())
+            j_demand = 0.
+
+            #deltaz = float(self.data_dock.txt_junction_deltaz.text())
+            deltaz = 0.
 
             pattern = self.data_dock.cbo_junction_pattern.itemData(
                     self.data_dock.cbo_junction_pattern.currentIndex())
@@ -125,6 +128,7 @@ class AddJunctionTool(QgsMapTool):
             #- Additional items added for XPSS
             zone_end = 0
             pressure = 0
+            pressure_units = 'm'
 
             # No links snapped: create a new stand-alone node
             if self.snapped_feat_id is None:
@@ -141,7 +145,8 @@ class AddJunctionTool(QgsMapTool):
                     junction_desc,
                     junction_tag,
                     zone_end,
-                    pressure
+                    pressure,
+                    pressure_units
                     )
 
             # A link has been snapped
@@ -171,7 +176,8 @@ class AddJunctionTool(QgsMapTool):
                             junction_desc,
                             junction_tag,
                             zone_end,
-                            pressure)
+                            pressure,
+                            pressure_units)
 
                     else:
 

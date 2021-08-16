@@ -9,7 +9,7 @@ from qgis.core import QgsFeature, QgsGeometry, QgsVectorDataProvider, QgsProject
     QgsVectorLayerEditUtils, QgsFeatureRequest, QgsLineString, QgsPoint, QgsVertexId, QgsSnappingUtils,\
     QgsSnappingConfig, QgsPointXY
 
-from .network import Junction, Reservoir, Tank, Pipe, Pump, Valve
+from .network import Junction, QJunction, Reservoir, Tank, Pipe, QPipe, Pump, Valve
 # from ..tools.parameters import Parameters
 from ..geo_utils import raster_utils
 from ..geo_utils.points_along_line import PointsAlongLineGenerator, PointsAlongLineUtils
@@ -21,7 +21,9 @@ class NodeHandler(object):
         pass
 
     @staticmethod
-    def create_new_junction(params, point, eid, elev, demand, deltaz, pattern_id, emitter_coeff, description, tag, zone_end, pressure):
+    def create_new_junction(params, point, eid, elev, demand, deltaz,
+                            pattern_id, emitter_coeff, description, tag,
+                            zone_end, pressure, pressure_units):
 
         junctions_caps = params.junctions_vlay.dataProvider().capabilities()
         if junctions_caps and QgsVectorDataProvider.AddFeatures:
@@ -34,13 +36,21 @@ class NodeHandler(object):
                 new_junct_feat.setAttribute(Junction.field_name_eid, eid)
                 new_junct_feat.setAttribute(Junction.field_name_elev, elev)
                 new_junct_feat.setAttribute(Junction.field_name_demand, demand)
-                new_junct_feat.setAttribute(Junction.field_name_delta_z, deltaz)
-                new_junct_feat.setAttribute(Junction.field_name_pattern, pattern_id)
-                new_junct_feat.setAttribute(Junction.field_name_emitter_coeff, emitter_coeff)
-                new_junct_feat.setAttribute(Junction.field_name_description, description)
+                new_junct_feat.setAttribute(QJunction.field_name_delta_z,
+                                            deltaz)
+                new_junct_feat.setAttribute(Junction.field_name_pattern,
+                                            pattern_id)
+                new_junct_feat.setAttribute(Junction.field_name_emitter_coeff,
+                                            emitter_coeff)
+                new_junct_feat.setAttribute(Junction.field_name_description,
+                                            description)
                 new_junct_feat.setAttribute(Junction.field_name_tag, tag)
-                new_junct_feat.setAttribute(Junction.field_name_zone_end, zone_end)
-                new_junct_feat.setAttribute(Junction.field_name_pressure, pressure)
+                new_junct_feat.setAttribute(QJunction.field_name_zone_end,
+                                            zone_end)
+                new_junct_feat.setAttribute(QJunction.field_name_pressure,
+                                            pressure)
+                new_junct_feat.setAttribute(QJunction.field_name_pressure_units,
+                                            pressure_units)
 
                 new_junct_feat.setGeometry(QgsGeometry.fromPointXY(point))
 
@@ -212,7 +222,10 @@ class LinkHandler(object):
         pass
 
     @staticmethod
-    def create_new_pipe(params, eid, diameter, loss, roughness, status, material, nodes, densify_vertices, description, tag, num_edu, zone_id, velocity, frictionloss):
+    def create_new_pipe(params, eid, length_units, diameter, diameter_units, loss, roughness,
+                         status, material, nodes, densify_vertices, description,
+                          tag, num_edu, zone_id, velocity, velocity_units,
+                           frictionloss, frictionloss_units):
 
         pipes_caps = params.pipes_vlay.dataProvider().capabilities()
         if pipes_caps and QgsVectorDataProvider.AddFeatures:
@@ -289,9 +302,12 @@ class LinkHandler(object):
 
             try:
                 new_pipe_ft = QgsFeature(params.pipes_vlay.fields())
+
                 new_pipe_ft.setAttribute(Pipe.field_name_eid, eid)
                 # new_pipe_ft.setAttribute(Pipe.field_name_demand, demand)
+                new_pipe_ft.setAttribute(QPipe.field_name_length_units, length_units)
                 new_pipe_ft.setAttribute(Pipe.field_name_diameter, diameter)
+                new_pipe_ft.setAttribute(QPipe.field_name_diameter_units, diameter_units)
                 new_pipe_ft.setAttribute(Pipe.field_name_length, length_3d)
                 new_pipe_ft.setAttribute(Pipe.field_name_minor_loss, loss)
                 new_pipe_ft.setAttribute(Pipe.field_name_roughness, roughness)
@@ -299,10 +315,12 @@ class LinkHandler(object):
                 new_pipe_ft.setAttribute(Pipe.field_name_material, material)
                 new_pipe_ft.setAttribute(Pipe.field_name_description, description)
                 new_pipe_ft.setAttribute(Pipe.field_name_tag, tag)
-                new_pipe_ft.setAttribute(Pipe.field_name_num_edu, num_edu)
-                new_pipe_ft.setAttribute(Pipe.field_name_zone_id, zone_id)
-                new_pipe_ft.setAttribute(Pipe.field_name_velocity, velocity)
-                new_pipe_ft.setAttribute(Pipe.field_name_frictionloss, frictionloss)
+                new_pipe_ft.setAttribute(QPipe.field_name_num_edu, num_edu)
+                new_pipe_ft.setAttribute(QPipe.field_name_zone_id, zone_id)
+                new_pipe_ft.setAttribute(QPipe.field_name_velocity, velocity)
+                new_pipe_ft.setAttribute(QPipe.field_name_velocity_units, velocity_units)
+                new_pipe_ft.setAttribute(QPipe.field_name_frictionloss, frictionloss)
+                new_pipe_ft.setAttribute(QPipe.field_name_frictionloss_units, frictionloss_units)
 
                 new_pipe_ft.setGeometry(geom_3d)
 
@@ -375,14 +393,18 @@ class LinkHandler(object):
             # Tag
             tag = data_dock.cbo_junction_tag.currentText()
 
+            zone_end = 0
+            pressure = 0.
+            pressure_units = data_dock.cbo_rpt_units_pressure.currentText()
+
             junction_eid = NetworkUtils.find_next_id(params.junctions_vlay, Junction.prefix)
             elev = raster_utils.read_layer_val_from_coord(params.dem_rlay, node_before, 1)
 
-            NodeHandler.create_new_junction(params, node_before, junction_eid, elev, 0, deltaz, pattern_id, emitter_coeff, description, tag)
+            NodeHandler.create_new_junction(params, node_before, junction_eid, elev, 0, deltaz, pattern_id, emitter_coeff, description, tag, zone_end, pressure, pressure_units)
 
             junction_eid = NetworkUtils.find_next_id(params.junctions_vlay, Junction.prefix)
             elev = raster_utils.read_layer_val_from_coord(params.dem_rlay, node_after, 1)
-            NodeHandler.create_new_junction(params, node_after, junction_eid, elev, 0, deltaz, pattern_id, emitter_coeff, description, tag)
+            NodeHandler.create_new_junction(params, node_after, junction_eid, elev, 0, deltaz, pattern_id, emitter_coeff, description, tag, zone_end, pressure, pressure_units)
 
         # Split the pipe and create gap
         if pipes_caps:
@@ -455,7 +477,9 @@ class LinkHandler(object):
 
         # Split only if vertex is not at line ends
         # demand = pipe_ft.attribute(Pipe.field_name_demand)
+        length_units = 'm' #TODO: soft code
         p_diameter = pipe_ft.attribute(Pipe.field_name_diameter)
+        p_diameter_units = pipe_ft.attribute(QPipe.field_name_diameter_units)
         loss = pipe_ft.attribute(Pipe.field_name_minor_loss)
         roughness = pipe_ft.attribute(Pipe.field_name_roughness)
         status = pipe_ft.attribute(Pipe.field_name_status)
@@ -464,9 +488,11 @@ class LinkHandler(object):
         pipe_tag = pipe_ft.attribute(Pipe.field_name_tag)
         num_edu = pipe_ft.attribute(Pipe.field_name_num_edu)
         zone_id = pipe_ft.attribute(Pipe.field_name_zone_id)
-        velocity = pipe_ft.attribute(Pipe.field_name_velocity)
-        frictionloss = pipe_ft.attribute(Pipe.field_name_frictionloss)
-        
+        velocity = pipe_ft.attribute(QPipe.field_name_velocity)
+        velocity_units = pipe_ft.attribute(QPipe.field_name_velocity_units)
+        frictionloss_units = pipe_ft.attribute(QPipe.field_name_frictionloss_units)
+        frictionloss = pipe_ft.attribute(QPipe.field_name_frictionloss)
+
 
         # Create two new linestrings
         pipes_caps = params.pipes_vlay.dataProvider().capabilities()
@@ -506,7 +532,9 @@ class LinkHandler(object):
                 pipe_ft_1 = LinkHandler.create_new_pipe(
                     params,
                     pipe_eid,
+                    length_units,
                     p_diameter,
+                    p_diameter_units,
                     loss,
                     roughness,
                     status,
@@ -518,7 +546,9 @@ class LinkHandler(object):
                     num_edu,
                     zone_id,
                     velocity,
-                    frictionloss)
+                    velocity_units,
+                    frictionloss,
+                    frictionloss_units)
 
                 # Second new polyline
                 pl2_pts = []
@@ -530,7 +560,9 @@ class LinkHandler(object):
                 pipe_ft_2 = LinkHandler.create_new_pipe(
                     params,
                     pipe_eid,
+                    length_units,
                     p_diameter,
+                    p_diameter_units,
                     loss,
                     roughness,
                     status,
@@ -542,7 +574,9 @@ class LinkHandler(object):
                     num_edu,
                     zone_id,
                     velocity,
-                    frictionloss)
+                    velocity_units,
+                    frictionloss,
+                    frictionloss_units)
 
                 # Delete old pipe
                 params.pipes_vlay.deleteFeature(pipe_ft.id())
@@ -625,7 +659,7 @@ class LinkHandler(object):
 
     @staticmethod
     def _delete_feature(params, layer, link_ft):
-        
+
         caps = layer.dataProvider().capabilities()
         if caps & QgsVectorDataProvider.DeleteFeatures:
 
@@ -745,18 +779,22 @@ class LinkHandler(object):
 
         # TODO: let the user set the attributes
         # demand = pipe1_ft.attribute(Pipe.field_name_demand)
+        length_units = pipe1_ft.attribute(QPipe.field_name_length_units)
         diameter = pipe1_ft.attribute(Pipe.field_name_diameter)
+        diameter_units = pipe1_ft.attribute(QPipe.field_name_diameter_units)
         loss = pipe1_ft.attribute(Pipe.field_name_minor_loss)
         roughness = pipe1_ft.attribute(Pipe.field_name_roughness)
         status = pipe1_ft.attribute(Pipe.field_name_status)
         material = pipe1_ft.attribute(Pipe.field_name_material)
         pipe_desc = pipe1_ft.attribute(Pipe.field_name_description)
         pipe_tag = pipe1_ft.attribute(Pipe.field_name_tag)
-        zone_id = pipe1_ft.attribute(Pipe.field_name_zone_id)
-        velocity = pipe1_ft.attribute(Pipe.field_name_velocity)
-        frictionloss = pipe1_ft.attribute(Pipe.field_name_frictionloss)
+        zone_id = pipe1_ft.attribute(QPipe.field_name_zone_id)
+        velocity = pipe1_ft.attribute(QPipe.field_name_velocity)
+        velocity_units = pipe1_ft.attribute(QPipe.field_name_velocity_units)
+        frictionloss = pipe1_ft.attribute(QPipe.field_name_frictionloss)
+        frictionloss_units = pipe1_ft.attribute(QPipe.field_name_frictionloss_units)
 
-        LinkHandler.create_new_pipe(parameters, eid, diameter, loss, roughness, status, material, new_geom_pts, False, pipe_desc, pipe_tag, zone_id, velocity, frictionloss)
+        LinkHandler.create_new_pipe(parameters, eid, length_units,  diameter, diameter_units, loss, status, material, new_geom_pts, False, pipe_desc, pipe_tag, num_edu, zone_id, velocity, velocity_units, frictionloss, frictionloss_units)
 
     @staticmethod
     def calc_3d_length(parameters, pipe_geom):
@@ -859,12 +897,12 @@ class NetworkUtils(object):
     def find_start_end_nodes_w_layer(params, link_geom, exclude_junctions=False, exclude_reservoirs=False, exclude_tanks=False):
         """
         This method should replace find_start_end_nodes (refactoring needed though)
-        :param params: 
-        :param link_geom: 
-        :param exclude_junctions: 
-        :param exclude_reservoirs: 
-        :param exclude_tanks: 
-        :return: 
+        :param params:
+        :param link_geom:
+        :param exclude_junctions:
+        :param exclude_reservoirs:
+        :param exclude_tanks:
+        :return:
         """
 
         intersecting_fts = [None, None]
@@ -945,7 +983,7 @@ class NetworkUtils(object):
             if node_ft == None:  #if no node was found search through all features (even the ones that do not intersect)
                 print("Entered New Code")
                 intersecting_fts = NetworkUtils.find_start_end_nodes_w_layer(params, link_geom)
-                
+
         return intersecting_fts
 
     @staticmethod
@@ -1134,7 +1172,7 @@ class NetworkUtils(object):
         overlap_juncts = []
         overlap_reservs = []
         overlap_tanks = []
-        
+
         for junct_feat in params.junctions_vlay.getFeatures():
             if NetworkUtils.points_overlap(junct_feat.geometry(), point, params.tolerance):
                 overlap_juncts.append(junct_feat)
@@ -1144,12 +1182,12 @@ class NetworkUtils(object):
             if NetworkUtils.points_overlap(reserv_feat.geometry(), point, params.tolerance):
                 overlap_reservs.append(reserv_feat)
                 break
-                
+
         for tank_feat in params.tanks_vlay.getFeatures():
             if NetworkUtils.points_overlap(tank_feat.geometry(), point, params.tolerance):
                 overlap_tanks.append(tank_feat)
                 break
-            
+
         return {'junctions': overlap_juncts, 'reservoirs': overlap_reservs, 'tanks': overlap_tanks }
 
     @staticmethod

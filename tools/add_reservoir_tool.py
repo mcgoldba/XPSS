@@ -106,18 +106,23 @@ class AddReservoirTool(QgsMapTool):
             else:
                 elev = self.elev
 
-            deltaz = float(self.data_dock.txt_reservoir_deltaz.text())
-            pressure_head = float(self.data_dock.txt_reservoir_pressure_head.text())
+            #deltaz = float(self.data_dock.txt_reservoir_deltaz.text())
+            deltaz = 0
+            #pressure_head = float(self.data_dock.txt_reservoir_pressure_head.text())
+            pressure_head = 0
 
-            pattern = self.data_dock.cbo_reservoir_pattern.itemData(self.data_dock.cbo_reservoir_pattern.currentIndex())
+            #pattern = self.data_dock.cbo_reservoir_pattern.itemData(self.data_dock.cbo_reservoir_pattern.currentIndex())
+            pattern = None
             if pattern is not None:
                 pattern_id = pattern.id
             else:
                 pattern_id = None
 
-            reservoir_desc = self.data_dock.txt_reservoir_desc.text()
+            #reservoir_desc = self.data_dock.txt_reservoir_desc.text()
+            reservoir_desc = ""
 
-            reservoir_tag = self.data_dock.cbo_reservoir_tag.currentText()
+            #reservoir_tag = self.data_dock.cbo_reservoir_tag.currentText()
+            reservoir_tag = ""
 
             # No links snapped: create a new stand-alone node
             if self.snapped_feat_id is None:

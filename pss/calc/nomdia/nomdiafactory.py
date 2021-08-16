@@ -4,10 +4,8 @@ from XPSS.pss.calc.nomdia import NomDia
 logger = Logger()
 
 class NomDiaFactory(NomDia):
-    def __init__(self, pssvars):
-        super().__init__(pssvars)
-        self.dockwidget = pssvars.dockwidget
-        self.pssvars = pssvars
+    def __init__(self, data, params, pipedb):
+        super().__init__(data, params, pipedb)
 
     registry = {}
 
@@ -22,7 +20,7 @@ class NomDiaFactory(NomDia):
         if not nomdiamethod:
             logger.error("Invalid driver key provided: "+str(key))
             raise ValueError(key)
-        return nomdiamethod(self.pssvars)
+        return nomdiamethod(self.data, self.params, self.pipedb)
 
     def get(self):
         pass

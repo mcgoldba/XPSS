@@ -230,7 +230,11 @@ class AddPipeTool(QgsMapTool):
 
                         pipe_eid = NetworkUtils.find_next_id(self.params.pipes_vlay, Pipe.prefix)  # TODO: softcode
                         #demand = float(self.data_dock.txt_pipe_demand.text())
-                        diameter = float(self.data_dock.txt_pipe_diameter.text())
+                        length_units = 'm' #TODO soft code
+                        diameter = float(self.data_dock.cbo_pipe_dia.\
+                                         currentText())
+                        diameter_units = self.data_dock.cbo_pipe_dia_units.\
+                            currentText()
                         #loss = float(self.data_dock.txt_pipe_loss.text())
                         #status = self.data_dock.cbo_pipe_status.currentText()
                         material = self.data_dock.cbo_pipe_mtl.currentText()
@@ -240,13 +244,17 @@ class AddPipeTool(QgsMapTool):
                         num_edu = 1
                         zone_id = 0
                         velocity = 0
+                        velocity_units = 'm/s'
                         frictionloss = 0
+                        frictionloss_units = 'm'
 
 
                         pipe_ft = LinkHandler.create_new_pipe(
                             self.params,
                             pipe_eid,
+                            length_units,
                             diameter,
+                            diameter_units,
                             0,
                             roughness,
                             " ",
@@ -258,7 +266,10 @@ class AddPipeTool(QgsMapTool):
                             num_edu,
                             zone_id,
                             velocity,
-                            frictionloss)
+                            velocity_units,
+                            frictionloss,
+                            frictionloss_units
+                            )
                         self.rubber_band.reset()
 
                         new_pipes_fts.append(pipe_ft)
@@ -279,6 +290,7 @@ class AddPipeTool(QgsMapTool):
 
                     zone_end = 0
                     pressure = 0
+                    pressure_units = self.data_dock.cbo_rpt_units_pressure.currentText()
 
 
                     # Create start and end node, if they don't exist
@@ -307,7 +319,9 @@ class AddPipeTool(QgsMapTool):
                         # else:
                         #     pattern_id = None
                         NodeHandler.create_new_junction(
-                            self.params, new_start_junction, junction_eid, elev, 0, deltaz, None, 0, " ", " ", zone_end, pressure)
+                            self.params, new_start_junction, junction_eid, elev,
+                             0, deltaz, None, 0, " ", " ", zone_end, pressure,
+                             pressure_units)
 
                     (start_junction, end_junction) = NetworkUtils.find_start_end_nodes(self.params, new_pipes_fts[len(new_pipes_fts) - 1].geometry())
                     new_end_junction = None
@@ -333,7 +347,9 @@ class AddPipeTool(QgsMapTool):
                         # else:
                         #     pattern_id = None
                         NodeHandler.create_new_junction(
-                            self.params, new_end_junction, junction_eid, elev, 0, deltaz, None, 0, " ", " ", zone_end, pressure)
+                            self.params, new_end_junction, junction_eid, elev,
+                            0, deltaz, None, 0, " ", " ", zone_end, pressure,
+                            pressure_units)
 
                     # If end or start node intersects a pipe, split it
                     if new_start_junction:

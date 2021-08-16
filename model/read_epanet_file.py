@@ -7,53 +7,53 @@ from ..model.options_report import Options, Quality, Report, Times
 from ..model.system_ops import Rule, Status, Curve, Demand, Energy, Pattern
 
 class InpReader(object):
-    
+
     def __init__(self, inp_file_name):
 
         self.tags = []
         self.mm = self.read(inp_file_name)
-    
+
     # def LoadFile(inp):
     #     # getPathPlugin = os.path.dirname(os.path.realpath(__file__))+"/"
     #     # inpname = getPathPlugin + inp
     #     inpname = inp
-    # 
+    #
     # def BinUpdateClass(self):
     #     global mm
     #     mm = getBinInfo()
     #     return mm
-    
+
     ## get Info
     def getBinNodeReservoirIndex(self):
         ind = list(range(self.getBinNodeJunctionCount() + 1, self.getBinNodeJunctionCount() + self.getBinNodeReservoirCount() + 1))
         return ind
-    
+
     def getBinNodeTankIndex(self):
         ind = list(range(self.getBinNodeJunctionCount() + self.getBinNodeReservoirCount() + 1, self.getBinNodeCount() + 1))
         return ind
-    
+
     def getBinNodeDemandPatternID(self):
         return self.mm[3]
-    
+
     def getBinNodeJunctionCount(self):
         return self.mm[4]
-    
+
     def getBinNodeReservoirCount(self):
         return self.mm[7]
-    
+
     def getBinNodeIndex(self, id):
         nodeNameID = self.getBinNodeNameID()
         return nodeNameID.index(id)
-    
+
     def getBinNodeNameID(self):
         return self.mm[0] + self.mm[5] + self.mm[8]
-    
+
     def getBinNodeJunctionNameID(self):
         return self.mm[0]
-    
+
     def getBinReservoirNameID(self):
         return self.mm[5]
-    
+
     # def getBinNodeElevations(self):
     #     global mm
     #     nodeElevations=getBinNodeJunctionElevations()
@@ -62,44 +62,44 @@ class InpReader(object):
     #     for i in range(len(mm[6])):
     #         nodeElevations.append(mm[9][i])
     #     return nodeElevations
-    
+
     def getBinNodeJunctionElevations(self):
         return self.mm[1]
-    
+
     def getBinNodeReservoirElevations(self):
         return self.mm[6]
-    
+
     def getBinNodeBaseDemands(self):
         return self.mm[2]
-    
+
     # Tanks Info
     def getBinNodeTankNameID(self):
         return self.mm[8]
-    
+
     def getBinNodeTankCount(self):
         return len(self.getBinNodeTankNameID())
-    
+
     def getBinNodeTankElevations(self):
         return self.mm[9]
-    
+
     def getBinNodeTankInitialLevel(self):
         return self.mm[10]
-    
+
     def getBinNodeTankMinimumWaterLevel(self):
         return self.mm[11]
-    
+
     def getBinNodeTankMaximumWaterLevel(self):
         return self.mm[12]
-    
+
     def getBinNodeTankDiameter(self):
         return self.mm[13]
-    
+
     def getBinNodeTankMinimumWaterVolume(self):
         return self.mm[14]
-    
+
     def getBinNodeTankVolumeCurveID(self):
         return self.mm[35]
-    
+
     # Get Links Info
     def getBinLinkPumpIndex(self):
         ind = []
@@ -134,15 +134,15 @@ class InpReader(object):
         for i in range(self.getBinLinkValveCount()):
             ll.append(vld[i])
         return ll
-    
-    
+
+
     def getBinLinkRoughnessCoeff(self):
         ll = self.getBinLinkPipeRoughness()
         for i in range(self.getBinLinkPipeCount() + 1, self.getBinLinkCount() + 1):
             ll.append(0)
         return ll
-    
-    
+
+
     def getBinLinkMinorLossCoeff(self):
         ll = self.getBinLinkPipeMinorLoss()
         vld = self.getBinLinkValveMinorLoss()
@@ -151,79 +151,79 @@ class InpReader(object):
         for i in range(self.getBinLinkValveCount()):
             ll.append(vld[i])
         return ll
-    
+
     def getBinLinkPipeCount(self):
         return len(self.getBinLinkPipeNameID())
-    
+
     def getBinLinkPipeNameID(self):
         return self.mm[15]
-    
-    
+
+
     def getBinLinkFromNode(self):
         return self.mm[16]
-    
+
     def getBinLinkToNode(self):
         return self.mm[17]
-    
+
     def getBinLinkPipeLengths(self):
         return self.mm[18]
-    
+
     def getBinLinkPipeDiameters(self):
         return self.mm[19]
-    
+
     def getBinLinkPipeRoughness(self):
         return self.mm[20]
-    
+
     def getBinLinkPipeMinorLoss(self):
         return self.mm[21]
-    
+
     # Get Pumps Info
     def getBinLinkPumpCount(self):
         return len(self.getBinLinkPumpNameID())
-    
+
     def getBinLinkPumpNameID(self):
         return self.mm[22]
-    
+
     def getBinLinkPumpPatterns(self):
         return self.mm[23]
-    
+
     def getBinLinkPumpCurveNameID(self):
         return self.mm[24]
-    
+
     def getBinLinkPumpPower(self):
         return self.mm[25]
-    
+
     def getBinLinkPumpNameIDPower(self):
         return self.mm[26]
-    
+
     def getBinLinkPumpSpeed(self):
         return self.mm[38]
-    
+
     def getBinLinkPumpPatternsPumpID(self):
         return self.mm[39]
-    
+
     def getBinLinkPumpSpeedID(self):
         return self.mm[62]
-    
+
     # Get Valves Info
     def getBinLinkValveCount(self):
         return len(self.getBinLinkValveNameID())
-    
+
     def getBinLinkValveNameID(self):
         return self.mm[27]
-    
+
     def getBinLinkValveDiameters(self):
         return self.mm[28]
-    
+
     def getBinLinkValveType(self):
         return self.mm[29]
-    
+
     def getBinLinkValveSetting(self):
         return self.mm[30]
-    
+
     def getBinLinkValveMinorLoss(self):
         return self.mm[31]
-    
+
     def getBinNodesConnectingLinksID(self):
         return [self.mm[16], self.mm[17]]
 
@@ -233,120 +233,120 @@ class InpReader(object):
         for i in range(self.getBinLinkCount()):
             nodeInd.append([self.getBinNodeIndex(NodesConnectingLinksID[0][i]), self.getBinNodeIndex(NodesConnectingLinksID[1][i])])
         return nodeInd
-    
+
     def getBinLinkCount(self):
         return self.getBinLinkPipeCount() + self.getBinLinkPumpCount() + self.getBinLinkValveCount()
 
     def getBinNodeCount(self):
         return self.getBinNodeJunctionCount() + self.getBinNodeReservoirCount() + self.getBinNodeTankCount()
-    
+
     # Status
     def getBinLinkInitialStatus(self):
         return self.mm[32]
 
     def getBinLinkInitialStatusNameID(self):
         return self.mm[33]
-    
+
     # Curves
     def getBinCurvesNameID(self):
         return self.mm[36]
-    
+
     def getBinCurvesXY(self):
         return self.mm[37]
-    
+
     def getBinCurveCount(self):
         return len(set(self.mm[36]))
-    
+
     def getDemandsSection(self):
         return self.mm[44]
-    
+
     def getStatusSection(self):
         return self.mm[45]
-    
+
     def getEmittersSection(self):
         return self.mm[46]
-    
+
     def getControlsSection(self):
         return self.mm[47]
-    
+
     def getPatternsSection(self):
         return self.mm[48]
-    
+
     def getCurvesSection(self):
         return self.mm[49], self.mm[50]
-    
+
     def getQualitySection(self):
         return self.mm[51]
-    
+
     def getRulesSection(self):
         return self.mm[52]
-    
+
     def getSourcesSection(self):
         return self.mm[53]
-    
+
     def getEnergySection(self):
         return self.mm[54]
-    
+
     def getReactionsSection(self):
         return self.mm[55]
-    
+
     def getReactionsOptionsSection(self):
         return self.mm[56]
-    
+
     def getMixingSection(self):
         return self.mm[57]
 
     def getTimesSection(self):
         return self.mm[58]
-    
+
     def getOptionsSection(self):
         return self.mm[59]
-    
+
     def getReportSection(self):
         return self.mm[60]
-    
+
     def getLabelsSection(self):
         return self.mm[61]
-    
+
     # Descriptions
     def get_junctions_desc(self):
         return self.mm[63]
-    
+
     def get_reservoirs_desc(self):
         return self.mm[64]
-    
+
     def get_tanks_desc(self):
         return self.mm[65]
-    
+
     def get_nodes_desc(self):
         return self.mm[63] + self.mm[64] + self.mm[65]
-    
+
     def get_pipes_desc(self):
         return self.mm[66]
-    
+
     def get_pumps_desc(self):
         return self.mm[67]
-    
+
     def get_valves_desc(self):
         return self.mm[68]
-    
+
     def get_links_desc(self):
         return self.mm[66] + self.mm[67] + self.mm[68]
-    
+
     def get_tags(self):
         return self.tags
-    
+
     # Get all info
     def read(self, inp_file_name):
         # file = open(inpname, 'r')
-    
+
         nodeJunctionNameID = []
         nodeJunctionElevations = []
         nodeJunctionBaseDemands = []
         nodePatternNameID = []
         nodeReservoirNameID = []
         nodeReservoirElevations = []
-    
+
         BinNodeTankNameID = []
         BinNodeTankElevation = []
         BinNodeTankInitLevel = []
@@ -355,7 +355,7 @@ class InpReader(object):
         BinNodeTankDiameter = []
         BinNodeTankMinVol = []
         BinNodeTankVolumeCurveID = []
-    
+
         BinLinkPipeNameID = []
         BinLinkFromNode = []
         BinLinkToNode = []
@@ -363,7 +363,7 @@ class InpReader(object):
         BinLinkPipeDiameters = []
         BinLinkPipeRoughness = []
         BinLinkPipeMinorLoss = []
-    
+
         BinLinkPumpPatterns = []
         BinLinkPumpCurveNameID = []
         BinLinkPumpPower = []
@@ -372,7 +372,7 @@ class InpReader(object):
         BinLinkPumpSpeedID = []
         BinLinkPumpSpeed = []
         BinLinkPumpPatternsPumpID = []
-    
+
         junctions_desc = []
         reservoirs_desc = []
         tanks_desc = []
@@ -380,21 +380,21 @@ class InpReader(object):
         pumps_desc = []
         valves_desc = []
         tags = []
-    
+
         BinLinkValveNameID = []
         BinLinkValveDiameters = []
         BinLinkValveType = []
         BinLinkValveSetting = []
         BinLinkValveMinorLoss = []
-    
+
         BinLinkInitialStatus = []
         BinLinkInitialStatusNameID = []
         BincountStatuslines = []
         linkNameID = []
-    
+
         BinCurvesNameID = []
         BinCurvesXY = []
-    
+
         # Sections
         demandsSection = []
         statusSection = []
@@ -415,7 +415,7 @@ class InpReader(object):
         optionsSection = []
         reportSection = []
         labelsSection = []
-    
+
         # s1 = file.readline()
         num = 13
         sec = [0] * num
@@ -429,13 +429,13 @@ class InpReader(object):
         ch1 = 0
         ch = 1
         section_name = ''
-    
+
         with open(inp_file_name) as openfileobject:
             for s1 in openfileobject:
-    
+
                 ok = 0
                 if "[END]" in s1:
-    
+
                     # file.close()
                     return [nodeJunctionNameID,  # 0
                             nodeJunctionElevations,  # 1
@@ -483,7 +483,7 @@ class InpReader(object):
                             pumps_desc,  # 67
                             valves_desc,  # 68
                             ]
-    
+
                 elif "[JUNCTIONS]" in s1:
                     sec[0] = 1
                     section_name = Junction.section_name
@@ -626,26 +626,26 @@ class InpReader(object):
                     continue
                 elif "[" in s1:
                     continue
-    
+
                 if s1.strip('\t ').startswith(';'):
                     continue
                 mm, desc = self.read_line(s1)
-    
+
                 if not mm[0]:
                     continue
-    
+
                 # --------------------------------------------------------
                 if sec[0] == 1:  # JUNCTIONS
-    
+
                     if len(mm) > 1:
                         if mm[0][0] == ';':
                             pass
                         else:
-    
+
                             nodeJunctionNameID.append(mm[0].strip())
                             junctions_desc.append(desc)
                             nodeJunctionElevations.append(float(mm[1]))
-    
+
                             node_jun_base_demand = 0
                             pattern = None
                             if len(mm) > 2 and mm[2].strip() != '':
@@ -654,12 +654,12 @@ class InpReader(object):
                             if len(mm) > 3 and mm[3].strip() != '':
                                 if mm[3][0] != ';':
                                     pattern = mm[3].strip()
-    
+
                             nodeJunctionBaseDemands.append(node_jun_base_demand)
                             nodePatternNameID.append(pattern)
-    
+
                 if sec[1] == 1:  # RESERVOIRS
-    
+
                     if not mm[0]:
                         continue
                     if len(mm) > 0:
@@ -676,9 +676,9 @@ class InpReader(object):
                                     nodePatternNameID.append('')
                             else:
                                 nodePatternNameID.append('')
-    
+
                 if sec[2] == 1:  # TANKS
-    
+
                     if not mm[0]:
                         continue
                     if len(mm) > 0:
@@ -701,9 +701,9 @@ class InpReader(object):
                                     BinNodeTankVolumeCurveID.append('')
                             else:
                                 BinNodeTankVolumeCurveID.append('')
-    
+
                 if sec[3] == 1:  # PIPES
-    
+
                     if not mm[0]:
                         continue
                     if len(mm) > 0:
@@ -738,12 +738,12 @@ class InpReader(object):
 #                                    BinLinkNumEDU.append(int(mm[9]))
 #                                else:
 #                                    BinLinkInitialStatus.append(int(0))
-    
+
                 if sec[4] == 1:  # PUMPS
-    
+
                     if not mm[0]:
                         continue
-    
+
                     if mm[0][0] == ';':
                         pass
                     else:
@@ -752,16 +752,16 @@ class InpReader(object):
                         pumps_desc.append(desc)
                         BinLinkFromNode.append(mm[1].strip())
                         BinLinkToNode.append(mm[2].strip())
-    
+
                         keywords = ['POWER', 'HEAD', 'SPEED', 'PATTERN']
-    
+
                         if len(mm) > 3:
                             for m in range(3, len(mm)-1):
                                 if mm[m].upper() in keywords:
                                     value = None
                                     if m+1 < len(mm) and mm[m+1] not in keywords and mm[m+1].strip() != ';':
                                         value = mm[m+1]
-    
+
                                     if mm[m].upper() == 'HEAD':
                                         BinLinkPumpCurveNameID.append(value)
                                     elif mm[m].upper() == 'POWER':
@@ -780,12 +780,12 @@ class InpReader(object):
                                         if value is not None:
                                             BinLinkPumpPatterns.append(value)
                                         BinLinkPumpPatternsPumpID.append(mm[0].strip())
-    
+
                 if sec[5] == 1:  # VALVES
-    
+
                     if not mm[0]:
                         continue
-    
+
                     if mm[0][0] == ';':
                         pass
                     else:
@@ -800,23 +800,23 @@ class InpReader(object):
                         if len(mm) > 6:
                             if mm[6][0] != ';':
                                 BinLinkValveMinorLoss.append(float(mm[6]))
-    
+
                 if sec[6] == 1:  # PATTERNS
-    
+
                     if not mm[0]:
                         continue
-    
+
                     if len(mm) > 1:
                         if mm[0][0] == ';':
                             pass
                         else:
                             patternsSection.append([mm[0], ' '.join(mm[1:])])
-    
+
                 if sec[7] == 1:  # STATUS
-    
+
                     if not mm[0]:
                         continue
-    
+
                     if len(mm) > 1:
                         if mm[0][0] == ';':
                             pass
@@ -828,24 +828,24 @@ class InpReader(object):
                             else:
                                 BinLinkInitialStatus.append(mm[1])
                             BincountStatuslines.append(mm)
-    
+
                 if sec[8] == 1:  # DEMANDS
-    
+
                     if not mm[0]:
                         continue
-    
+
                     if len(mm) > 1:
                         if mm[0][0] == ';':
                             pass
                         else:
                             nodeJunctionBaseDemands.append(float(mm[1]))
                             demandsSection.append(mm)
-    
+
                 if sec[9] == 1:  # CURVES
-    
+
                     if not mm[0]:
                         continue
-    
+
                     if len(mm) > 0:
                         if mm[0][0].strip() == ';':
                             if mm[0] == ';ID':
@@ -860,60 +860,60 @@ class InpReader(object):
                                 curvesSectionType.append('HEADLOSS')
                             else:
                                 curvesSectionType.append('PUMP')
-    
+
                         if mm[0][0].strip() != ';':
                             curvesSection.append(mm)
                             BinCurvesNameID.append(mm[0])
                             BinCurvesXY.append([float(mm[1]), float(mm[2])])
-    
+
                 if sec[10] == 1:  # CONTROLS
                     if "[" in s1:
                         continue
                     # mm = s1.split()
-    
+
                     if len(mm) > 1:
                         if mm[0][0] == ';':
                             pass
                         else:
                             controlsSection.append(' '.join(mm))
-    
+
                 if sec2[0] == 1:  # COORDINATES
                     if "[" in s1:
                         continue
                     # mm = s1.split()
-    
+
                     if len(mm) > 2:
                         if mm[0][0] != ';':
                             x.append(float(mm[1]))
                             y.append(float(mm[2]))
-    
+
                 if sec2[1] == 1:  # VERTICES
                     if "[" in s1:
                         continue
                     # mm = s1.split()
-    
+
                     if len(mm) > 2:
                         if mm[0][0] != ';':
                             linkIndex = linknameid.index(mm[0])
                             vertx[linkIndex].append(float(mm[1]))
                             verty[linkIndex].append(float(mm[2]))
-    
+
                 if sec2[2] == 1:  # EMITTERS
                     if "[" in s1:
                         continue
                     # mm = s1.split()
-    
+
                     if len(mm) > 1:
                         if mm[0][0] == ';':
                             pass
                         else:
                             emittersSection.append(mm)
-    
+
                 if sec2[3] == 1:  # RULES
                     if "[" in s1:
                         continue
                     # mm = s1.split()
-    
+
                     if len(mm) > 1:
                         if mm[0][0] == ';':
                             pass
@@ -928,7 +928,7 @@ class InpReader(object):
                                     rules.append([s1, mm])
                             else:
                                 rules.append([s1, mm])
-    
+
                 if sec2[4] == 1:  # QUALITY
                     if "[" in s1:
                         continue
@@ -938,7 +938,7 @@ class InpReader(object):
                             pass
                         else:
                             qualitySection.append(mm)
-    
+
                 if sec2[5] == 1:  # SOURCES
                     if "[" in s1:
                         continue
@@ -948,18 +948,18 @@ class InpReader(object):
                             pass
                         else:
                             sourcesSection.append(mm)
-    
+
                 if sec2[6] == 1:  # ENERGY
                     if "[" in s1:
                         continue
                     # mm = s1.split()
-    
+
                     if len(mm) > 1:
                         if mm[0][0] == ';':
                             pass
                         else:
                             energySection.append(mm)
-    
+
                 if sec2[7] == 1:  # REACTIONS
                     if "[" in s1:
                         continue
@@ -973,7 +973,7 @@ class InpReader(object):
                                 ch1 = 1
                             else:
                                 reactionsSection.append(mm)
-    
+
                 if sec2[8] == 1:  # MIXING
                     if "[" in s1:
                         continue
@@ -983,7 +983,7 @@ class InpReader(object):
                             pass
                         else:
                             mixingSection.append(mm)
-    
+
                 if sec2[9] == 1:  # TIMES
                     if "[" in s1:
                         continue
@@ -993,7 +993,7 @@ class InpReader(object):
                             pass
                         else:
                             timesSection.append(mm)
-    
+
                 if sec2[10] == 1:  # REPORT
                     if "[" in s1:
                         continue
@@ -1003,7 +1003,7 @@ class InpReader(object):
                             pass
                         else:
                             reportSection.append(mm)
-    
+
                 if sec2[11] == 1:  # OPTIONS
                     if "[" in s1:
                         continue
@@ -1013,7 +1013,7 @@ class InpReader(object):
                             pass
                         else:
                             optionsSection.append(mm)
-    
+
                 if sec2[12] == 1:  # LABELS
                     if "[" in s1:
                         continue
@@ -1038,27 +1038,27 @@ class InpReader(object):
     def read_line(self, s1):
         # Strip new line
         s1 = s1.strip('\r\n')
-    
+
         # Strip stuff beyond ;
         pos = s1.rfind(';')
         description = ''
         if pos > 0:
             # Get description
             description = s1[pos + 1:]
-    
+
             # Strip description
             s1 = s1[:pos]
-    
+
         mm = re.split('[\t\s]+', s1.strip('\t ;'))
-    
+
         return mm, description
-    
+
     ## Node Coordinates
     def getBinNodeCoordinates(self):
         return self.mm[40], self.mm[41], self.mm[42], self.mm[43]  # ,mm[44],mm[45],mm[46],mm[47]
         # x,y,x1,y1,x2,y2,vertx,verty] #40#41#42#43#44#45#46#47
-    
-    
+
+
     EN_ELEVATION = 0  # /* Node parameters */
     EN_BASEDEMAND = 1
     EN_PATTERN = 2
@@ -1076,7 +1076,7 @@ class InpReader(object):
     EN_INITVOLUME = 14
     EN_MIXMODEL = 15
     EN_MIXZONEVOL = 16
-    
+
     EN_TANKDIAM = 17
     EN_MINVOLUME = 18
     EN_VOLCURVE = 19
@@ -1084,7 +1084,7 @@ class InpReader(object):
     EN_MAXLEVEL = 21
     EN_MIXFRACTION = 22
     EN_TANK_KBULK = 23
-    
+
     EN_DIAMETER = 0  # /* Link parameters */
     EN_LENGTH = 1
     EN_ROUGHNESS = 2
@@ -1099,7 +1099,7 @@ class InpReader(object):
     EN_STATUS = 11
     EN_SETTING = 12
     EN_ENERGY = 13
-    
+
     EN_DURATION = 0  # /* Time parameters */
     EN_HYDSTEP = 1
     EN_QUALSTEP = 2
@@ -1110,18 +1110,18 @@ class InpReader(object):
     EN_RULESTEP = 7
     EN_STATISTIC = 8
     EN_PERIODS = 9
-    
+
     EN_NODECOUNT = 0  # /* Component counts */
     EN_TANKCOUNT = 1
     EN_LINKCOUNT = 2
     EN_PATCOUNT = 3
     EN_CURVECOUNT = 4
     EN_CONTROLCOUNT = 5
-    
+
     EN_JUNCTION = 0  # /* Node types */
     EN_RESERVOIR = 1
     EN_TANK = 2
-    
+
     EN_CVPIPE = 0  # /* Link types */
     EN_PIPE = 1
     EN_PUMP = 2
@@ -1131,17 +1131,17 @@ class InpReader(object):
     EN_FCV = 6
     EN_TCV = 7
     EN_GPV = 8
-    
+
     EN_NONE = 0  # /* Quality analysis types */
     EN_CHEM = 1
     EN_AGE = 2
     EN_TRACE = 3
-    
+
     EN_CONCEN = 0  # /* Source quality types */
     EN_MASS = 1
     EN_SETPOINT = 2
     EN_FLOWPACED = 3
-    
+
     EN_CFS = 0  # /* Flow units types */
     EN_GPM = 1
     EN_MGD = 2
@@ -1152,35 +1152,35 @@ class InpReader(object):
     EN_MLD = 7
     EN_CMH = 8
     EN_CMD = 9
-    
+
     EN_TRIALS = 0  # /* Misc. options */
     EN_ACCURACY = 1
     EN_TOLERANCE = 2
     EN_EMITEXPON = 3
     EN_DEMANDMULT = 4
-    
+
     EN_LOWLEVEL = 0  # /* Control types */
     EN_HILEVEL = 1
     EN_TIMER = 2
     EN_TIMEOFDAY = 3
-    
+
     EN_AVERAGE = 1  # /* Time statistic types.    */
     EN_MINIMUM = 2
     EN_MAXIMUM = 3
     EN_RANGE = 4
-    
+
     EN_MIX1 = 0  # /* Tank mixing models */
     EN_MIX2 = 1
     EN_FIFO = 2
     EN_LIFO = 3
-    
+
     EN_NOSAVE = 0  # /* Save-results-to-file flag */
     EN_SAVE = 1
     EN_INITFLOW = 10  # /* Re-initialize flow flag   */
-    
+
     Open = 1
     Closed = 0
-    
+
     # Constants for units
     FlowUnits = {EN_CFS: "cfs",
                  EN_GPM: "gpm",
@@ -1192,7 +1192,7 @@ class InpReader(object):
                  EN_MLD: "m3/h",
                  EN_CMH: "m3/d",
                  EN_CMD: "ML/d"}
-    
+
     # Constants for links
     TYPELINK = {EN_CVPIPE: "CV",
                 EN_PIPE: "PIPE",
@@ -1203,36 +1203,36 @@ class InpReader(object):
                 EN_FCV: "FCV",
                 EN_TCV: "TCV",
                 EN_GPV: "GPV"}
-    
+
     # Constants for nodes
     TYPENODE = {EN_JUNCTION: "JUNCTION",
                 EN_RESERVOIR: "RESERVOIR",
                 EN_TANK: "TANK"}
-    
+
     # Constants for controls
     TYPECONTROL = {EN_LOWLEVEL: "LOWLEVEL",
                    EN_HILEVEL: "HIGHLEVEL",
                    EN_TIMER: "TIMER",
                    EN_TIMEOFDAY: "TIMEOFDAY"}
-    
+
     # Constants for mixing models
     TYPEMIXMODEL = {EN_MIX1: "MIX1",
                     EN_MIX2: "MIX2",
                     EN_FIFO: "FIFO",
                     EN_LIFO: "LIFO"}
-    
+
     # Constants for quality
     TYPEQUALITY = {EN_NONE: "NONE",
                    EN_CHEM: "CHEM",
                    EN_AGE: "AGE",
                    EN_TRACE: "TRACE"}
-    
+
     # Constants for sources
     TYPESOURCE = {EN_CONCEN: "CONCEN",
                   EN_MASS: "MASS",
                   EN_SETPOINT: "SETPOINT",
                   EN_FLOWPACED: "FLOWPACED"}
-    
+
     # Constants for statistics
     TYPESTATS = {EN_NONE: "NONE",
                  EN_AVERAGE: "AVERAGE",

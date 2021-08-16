@@ -1,13 +1,12 @@
 from XPSS.logger import Logger
-from XPSS.pss.calc.driver import Driver
+from XPSS.pss.calc.solvers import Solver
 
 logger = Logger()
 
-class DriverFactory(Driver):
+class SolverFactory(Solver):
     """ The factory class for creating drivers"""
-    def __init__(self, dockwidget):
-        super().__init__(dockwidget)
-        self.dockwidget = dockwidget
+    def __init__(self, params, pipedb, data=None):
+        super().__init__(params, pipedb, data)
 
     registry = {}
 
@@ -19,11 +18,11 @@ class DriverFactory(Driver):
 
     #@classmethod
     def create(self, key, **kwargs):
-        driver = self.__class__.registry.get(key)
-        if not driver:
-            logger.error("Invalid driver key provided: "+str(key))
+        solver = self.__class__.registry.get(key)
+        if not solver:
+            logger.error("Invalid solver key provided: "+str(key))
             raise ValueError(key)
-        return driver(self.dockwidget, **kwargs)
+        return solver(self.params, self.pipedb, data=self.data)
 
     def run():
         pass

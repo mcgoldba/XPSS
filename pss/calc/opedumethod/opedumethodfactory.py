@@ -5,8 +5,8 @@ from XPSS.pss.calc.opedumethod import OpEduMethod
 logger = Logger()
 
 class OpEduMethodFactory(OpEduMethod):
-    def __init__(self, dockwidget, n):
-        super().__init__(dockwidget, n)
+    def __init__(self, params, n):
+        super().__init__(params, n)
 
     registry = {}
 
@@ -22,7 +22,7 @@ class OpEduMethodFactory(OpEduMethod):
         if not opedumethod:
             logger.error("Invalid driver key provided: "+str(key))
             raise ValueError(key)
-        return opedumethod(self.dockwidget, self.n)
+        return opedumethod(self.params, self.n)
 
     def calc(self, **kwargs):
         pass

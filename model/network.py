@@ -47,8 +47,7 @@ class Junction(object):
     field_name_emitter_coeff = 'emit_coeff'
     field_name_description = 'description'
     field_name_tag = 'tag'
-    field_name_zone_end = 'zone_end'
-    field_name_pressure = 'pressure'
+
 
     prefix = 'J'
 
@@ -59,9 +58,7 @@ class Junction(object):
               QgsField(field_name_demand, QVariant.Double),
               QgsField(field_name_emitter_coeff, QVariant.Double),
               QgsField(field_name_description, QVariant.String),
-              QgsField(field_name_tag, QVariant.String),
-              QgsField(field_name_zone_end, QVariant.Int),
-              QgsField(field_name_pressure, QVariant.Double)]
+              QgsField(field_name_tag, QVariant.String)]
 
 
     def __init__(self, eid):
@@ -73,21 +70,22 @@ class Junction(object):
         self.emitter_coeff = 0
         self.description = ''
         self.tag = ''
-        self.zone_end = 0
-        self.pressure = 0
+
 
 class QJunction(object):
     section_name = 'QEPANET-JUNCTIONS'
-    section_header = 'ID               	DeltaZ               	ZoneEnd               	Pressure'
+    section_header = 'ID               	DeltaZ               	ZoneEnd               	Pressure              	PressureUnits         	'
     field_name_eid = 'id'
     field_name_delta_z = 'delta_z'
     field_name_zone_end = 'zone_end' #MG added for PSS calc
     field_name_pressure = 'pressure'
+    field_name_pressure_units = 'pressure_units'
 
     fields = [QgsField(field_name_eid, QVariant.String),
               QgsField(field_name_delta_z, QVariant.Double),
-              QgsField(field_name_zone_end, QVariant.String),
-              QgsField(field_name_pressure, QVariant.Double)]
+              QgsField(field_name_zone_end, QVariant.Int),
+              QgsField(field_name_pressure, QVariant.Double),
+              QgsField(field_name_pressure_units, QVariant.String)]
 
 
 class Reservoir(object):
@@ -194,35 +192,36 @@ class Pipe(object):
     field_name_material = 'material'
     field_name_description = 'description'
     field_name_tag = 'tag'
-    field_name_num_edu = 'num_edu'
-    field_name_zone_id = 'zone_id'
-    field_name_velocity = 'velocity'
-    field_name_frictionloss = 'friction_loss'
+    #field_name_num_edu = 'num_edu'
+    #field_name_zone_id = 'zone_id'
+
 
 
     prefix = 'L'  # L to distinguish it from Pumps
 
     fields = [QgsField(field_name_eid, QVariant.String),
               QgsField(field_name_length, QVariant.Double),
+              #QgsField(field_name_length_units, QVariant.String),
               QgsField(field_name_diameter, QVariant.Double),
+              #QgsField(field_name_diameter_units, QVariant.String),
               QgsField(field_name_status, QVariant.String),
               QgsField(field_name_roughness, QVariant.Double),
               QgsField(field_name_minor_loss, QVariant.Double),
               QgsField(field_name_material, QVariant.String),
               QgsField(field_name_description, QVariant.String),
-              QgsField(field_name_tag, QVariant.String),
-              QgsField(field_name_num_edu, QVariant.Int),   #ADDED to allow for PSS calculation
-              QgsField(field_name_zone_id, QVariant.Int),  #ADDED to allow for PSS calculation
-              QgsField(field_name_velocity, QVariant.Double),  #ADDED to allow for PSS calculation
-              QgsField(field_name_frictionloss, QVariant.Double)]  #ADDED to allow for PSS calculation
+              QgsField(field_name_tag, QVariant.String)]
+              #QgsField(field_name_num_edu, QVariant.Int),   #ADDED to allow for PSS calculation
+              #QgsField(field_name_zone_id, QVariant.Int)]  #ADDED to allow for PSS calculation
 
     def __init__(self, eid):
         self.eid = eid
 
         self.demand = 0
         self.diameter = -1
+        self.diameter_units = ''
         self.end_node = -1
         self.length = 0
+        self.length_units = 'm'
         self.minor_loss = 0
         self.roughness = -1
         self.start_node = -1
@@ -233,7 +232,9 @@ class Pipe(object):
         self.num_edu = 1 #MG: added to allow for pipe diameter calculation for PSS analysis
         self.zone_id = 0
         self.velocity = 0
+        self.velocity_units = 'm/s'
         self.frictionloss = 0
+        self.frictionloss_units = 'm'
 
 
 class Pump(object):
@@ -345,21 +346,28 @@ class QTank(object):
 
 class QPipe(object):
     section_name = 'QEPANET-PIPES'
-    section_header = 'ID               	Material              EDU                   ZoneID                   Velocity                   FrictionLoss'
+    section_header = 'ID               	Material              EDU                   ZoneID                   Velocity                   FrictionLoss              LengthUnits           DiameterUnits             VelocityUnits             FrictionLossUnits'
     field_name_eid = 'id'
     field_name_material = 'material'
     field_name_num_edu = "num_edu" #MG: added to allow for pipe diameter calculation.
     field_name_zone_id = "zone_id"
     field_name_velocity = "velocity"
+    field_name_velocity_units = "velocity_units"
     field_name_frictionloss = "frictionloss"
-    
+    field_name_frictionloss_units = "frictionloss_units"
+    field_name_length_units = "length_units"
+    field_name_diameter_units = "diameter_units"
+
     fields = [QgsField(field_name_eid, QVariant.String),
               QgsField(field_name_material, QVariant.String),
               QgsField(field_name_num_edu, QVariant.Int),
               QgsField(field_name_zone_id, QVariant.Int),
               QgsField(field_name_velocity, QVariant.Double),
-              QgsField(field_name_frictionloss, QVariant.Double)
-             ]
+              QgsField(field_name_frictionloss, QVariant.Double),
+              QgsField(field_name_length_units, QVariant.String),
+              QgsField(field_name_diameter_units, QVariant.String),
+              QgsField(field_name_velocity_units, QVariant.String),
+              QgsField(field_name_frictionloss_units, QVariant.String)]
 
 
 class QVertices(object):

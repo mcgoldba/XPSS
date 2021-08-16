@@ -5,7 +5,7 @@ import os
 from qgis.PyQt.QtCore import QVariant
 from qgis.core import QgsVectorLayer, QgsFeature, QgsFields, QgsVectorFileWriter, QgsWkbTypes, QgsField
 
-from ..model.network import Junction, Reservoir, Tank, Pipe, Pump, Valve, Tables, Node, Link
+from ..model.network import Junction, QJunction, Reservoir, Tank, Pipe, QPipe, Pump, Valve, Tables, Node, Link
 from ..tools.parameters import Parameters
 from ..geo_utils.exceptions import ShpExistsExcpetion
 
@@ -25,6 +25,7 @@ class MemoryDS(object):
         junctions_lay = QgsVectorLayer(url, Parameters.junctions_vlay_name, 'memory')
         junctions_lay_dp = junctions_lay.dataProvider()
         junctions_lay_dp.addAttributes(Junction.fields)
+        junctions_lay_dp.addAttributes(QJunction.fields)
         junctions_lay.updateFields()
 
         if geoms is not None:
@@ -128,6 +129,7 @@ class MemoryDS(object):
         pipes_lay = QgsVectorLayer(url, Parameters.pipes_vlay_name, 'memory')
         pipes_lay_dp = pipes_lay.dataProvider()
         pipes_lay_dp.addAttributes(Pipe.fields)
+        pipes_lay_dp.addAttributes(QPipe.fields)
         pipes_lay.updateFields()
 
         if geoms is not None:
@@ -213,7 +215,7 @@ class MemoryDS(object):
                 valve_ft.setAttribute(Valve.field_name_setting, setting)
                 valve_ft.setAttribute(Valve.field_name_type, type)
                 valves_lay.addFeature(valve_ft)
-    
+
         return valves_lay
 
     @staticmethod

@@ -3,8 +3,10 @@ import qgis.utils
 
 import pandas as pd
 
-from XPSS.model.network import Pipe, Junction, Reservoir
+from XPSS.model.network import Pipe, QPipe, Junction, QJunction, Reservoir
 from XPSS.model.network_handling import NetworkUtils
+
+
 
 from XPSS.logger import Logger
 
@@ -27,23 +29,21 @@ class PSS:
     # nPipes = None
     # nNodes = None
 
-    def __init__(self, dockwidget):
+    def __init__(self, pssparams, pipedb):
         #self.pipeProps = pd.DataFrame()
         #self.nodeProps = pd.DataFrame()
         self.xpss = qgis.utils.plugins["XPSS"]
-        self.params = self.xpss.params  #refer to the parameters stored in the existing instance of qepanet
-        self.pipe_fts = pd.DataFrame(self.params.pipes_vlay.getFeatures(),columns=[field.name() for field in self.params.pipes_vlay.fields() ])  #extract pipe attribute table as a pandas array
-        self.junc_fts = pd.DataFrame(self.params.junctions_vlay.getFeatures(),columns=[field.name() for field in self.params.junctions_vlay.fields() ])  #extract pipe attribute table as a pandas array
-        self.res_fts = pd.DataFrame(self.params.reservoirs_vlay.getFeatures(),columns=[field.name() for field in self.params.reservoirs_vlay.fields() ])  #extract pipe attribute table as a pandas array
-        self.checkPipeConns = dockwidget.chk_check_pipes.isChecked()
-        self.checkNodeConns = dockwidget.chk_check_nodes.isChecked()
+        self.qgisparams = self.xpss.params  #refer to the parameters stored in the existing instance of qepanet
+        self.pipe_fts = pd.DataFrame(self.qgisparams.pipes_vlay.getFeatures(),columns=[field.name() for field in self.qgisparams.pipes_vlay.fields() ])  #extract pipe attribute table as a pandas array
+        self.junc_fts = pd.DataFrame(self.qgisparams.junctions_vlay.getFeatures(),columns=[field.name() for field in self.qgisparams.junctions_vlay.fields() ])  #extract pipe attribute table as a pandas array
+        self.res_fts = pd.DataFrame(self.qgisparams.reservoirs_vlay.getFeatures(),columns=[field.name() for field in self.qgisparams.reservoirs_vlay.fields() ])  #extract pipe attribute table as a pandas array
+        self.params = pssparams
+        self.pipedb = pipedb
 
         [self.pipeProps, self.nodeProps, self.pipeNodeProps,
          self.res, self.res_elev] = self.initialize_from_qepanet()
 
-        self.L = None
-
-        self.check(self.checkPipeConns, self.checkNodeConns)
+        self.check(self.params.checkPipeConns, self.params.checkNodeConns)
 
         logger.debugger("sysGeomError: "+str(PSS.sysGeomError))
         logger.debugger("numEntityErr: "+str(PSS.numEntityErr))
@@ -55,11 +55,11 @@ class PSS:
         #TODO:  rewrite to use a pandas dataframe
 
         sindex = QgsSpatialIndex()
-        pipe_fts = self.params.pipes_vlay.getFeatures()
-        junc_fts = self.params.junctions_vlay.getFeatures()
-        res_fts = self.params.reservoirs_vlay.getFeatures()
-        # tank_fts = self.params.tanks_vlay.getFeatures()
-        # pump_fts = self.params.pumps_vlay.getFeatures()
+        pipe_fts = self.qgisparams.pipes_vlay.getFeatures()
+        junc_fts = self.qgisparams.junctions_vlay.getFeatures()
+        res_fts = self.qgisparams.reservoirs_vlay.getFeatures()
+        # tank_fts = self.qgisparams.tanks_vlay.getFeatures()
+        # pump_fts = self.qgisparams.pumps_vlay.getFeatures()
 
         logger.progress("%%%%%%%%%%% BEGIN CHECK OF PSS SYSTEM %%%%%%%%%%%")
 
@@ -113,11 +113,11 @@ class PSS:
             num_entity_err = True
 
         #reset QGIS iterators
-        pipe_fts = self.params.pipes_vlay.getFeatures()
-        junc_fts = self.params.junctions_vlay.getFeatures()
-        res_fts = self.params.reservoirs_vlay.getFeatures()
-        # tank_fts = self.params.tanks_vlay.getFeatures()
-        # pump_fts = self.params.pumps_vlay.getFeatures()
+        pipe_fts = self.qgisparams.pipes_vlay.getFeatures()
+        junc_fts = self.qgisparams.junctions_vlay.getFeatures()
+        res_fts = self.qgisparams.reservoirs_vlay.getFeatures()
+        # tank_fts = self.qgisparams.tanks_vlay.getFeatures()
+        # pump_fts = self.qgisparams.pumps_vlay.getFeatures()
 
         node_lst = [junc_fts, res_fts]
         node_Class = [Junction, Reservoir]
@@ -148,11 +148,11 @@ class PSS:
                     if num_entity_err == True:
                         all_pipes.append(eid)
 
-                    #sindex = self.params.nodes_sindex
+                    #sindex = self.qgisparams.nodes_sindex
                     # Find start/end nodes
-                    adj_nodes = NetworkUtils.find_start_end_nodes_sindex(self.params, sindex, ft.geometry())
+                    adj_nodes = NetworkUtils.find_start_end_nodes_sindex(self.qgisparams, sindex, ft.geometry())
 
-                    #adj_nodes = NetworkUtils.find_start_end_nodes(self.params, ft.geometry())  #TODO:  Determine why the 'sindex' version does not work
+                    #adj_nodes = NetworkUtils.find_start_end_nodes(self.qgisparams, ft.geometry())  #TODO:  Determine why the 'sindex' version does not work
 
 
                     found_nodes = []
@@ -188,7 +188,7 @@ class PSS:
                         has_error = True
 
                     if len(short_pipe_nodes) > 0:
-                        self.select_qgis_feature(self.params.junctions_vlay, short_pipe_nodes)
+                        self.select_qgis_feature(self.qgisparams.junctions_vlay, short_pipe_nodes)
 
                     Pipe_nodes.append([eid, start_node_id, end_node_id])
 
@@ -208,7 +208,7 @@ class PSS:
                     #     has_error = True
 
             if len(disconn_pipes) > 0:
-                self.select_qgis_features(self.params.pipes_vlay, disconn_pipes)  #TODO:  assumes the vector layer is Pipes
+                self.select_qgis_features(self.qgisparams.pipes_vlay, disconn_pipes)  #TODO:  assumes the vector layer is Pipes
 
         else:
             logger.progress("Pipe connection checks were not performed.")
@@ -235,7 +235,7 @@ class PSS:
                         has_error = True
 
             if len(disconn_juncs) > 0:
-                self.select_qgis_features(self.params.junctions_vlay, disconn_juncs)  #TODO:  assumes the vector layer is Junctions
+                self.select_qgis_features(self.qgisparams.junctions_vlay, disconn_juncs)  #TODO:  assumes the vector layer is Junctions
         else:
             logger.progress("Node connection checks were not performed.")
 
@@ -283,11 +283,11 @@ class PSS:
         r=0
         t=0
 
-        pipe_fts = self.params.pipes_vlay.getFeatures()
-        junc_fts = self.params.junctions_vlay.getFeatures()
-        res_fts = self.params.reservoirs_vlay.getFeatures()
-        #tank_fts = self.params.tanks_vlay.getFeatures()
-        #pump_fts = self.params.pumps_vlay.getFeatures()
+        pipe_fts = self.qgisparams.pipes_vlay.getFeatures()
+        junc_fts = self.qgisparams.junctions_vlay.getFeatures()
+        res_fts = self.qgisparams.reservoirs_vlay.getFeatures()
+        #tank_fts = self.qgisparams.tanks_vlay.getFeatures()
+        #pump_fts = self.qgisparams.pumps_vlay.getFeatures()
 
         for feat in junc_fts:
             sindex.addFeature(feat)
@@ -313,7 +313,7 @@ class PSS:
 
             # Find start/end nodes
             # adj_nodes = NetworkUtils.find_start_end_nodes(params, pipe_ft.geometry())
-            adj_nodes = NetworkUtils.find_start_end_nodes_sindex(self.params, sindex, pipe_ft.geometry())
+            adj_nodes = NetworkUtils.find_start_end_nodes_sindex(self.qgisparams, sindex, pipe_ft.geometry())
 
             start_node_id = adj_nodes[0].attribute(Junction.field_name_eid)
             end_node_id = adj_nodes[1].attribute(Junction.field_name_eid)
@@ -332,13 +332,13 @@ class PSS:
             Pipe_props_raw.append([eid])
 
         #reset the iterator for junc_fts
-        junc_fts = self.params.junctions_vlay.getFeatures()
+        junc_fts = self.qgisparams.junctions_vlay.getFeatures()
 
         for junc_ft in junc_fts:
 
             eid = junc_ft.attribute(Junction.field_name_eid)
             elev = junc_ft.attribute(Junction.field_name_elev)
-            zone_end = junc_ft.attribute(Junction.field_name_zone_end)
+            zone_end = junc_ft.attribute(QJunction.field_name_zone_end)
 
             Node_props_raw.append([eid, elev, zone_end])
 

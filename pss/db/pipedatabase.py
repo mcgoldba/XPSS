@@ -107,10 +107,26 @@ class PipeDatabase:
 
                 logger.debugger("diameters: "+str(self.materials[material[0][0]].schedules[schedule[0][0]].diameters.keys()))
 
-                return np.array([self.materials[mat].schedules[sch].\
-                            diameters[float(d)] for mat, sch, d in np.stack(
+                # return np.array([self.materials[mat].schedules[sch].\
+                #             diameters[float(d)]*LengthUnits[
+                #             self.materials[mat].schedules[sch].baseunits]
+                #             for mat, sch, d in np.stack(
+                #             (material.flatten(), schedule.flatten(),
+                #             nomDia.flatten()), axis=1)])
+                d =  np.array([self.materials[mat].schedules[sch].\
+                            diameters[float(d)]
+                            for mat, sch, d in np.stack(
                             (material.flatten(), schedule.flatten(),
                             nomDia.flatten()), axis=1)])
+
+                logger.debugger('diameters: '+str(d))
+                #TODO: assumes all values have same base dimensions
+                #       This is a limitation with the pint library (I think)
+                d = d.reshape((-1,1))
+                d *= LengthUnits[self.materials[material[0][0]].\
+                    schedules[schedule[0][0]].baseunits]
+                logger.debugger('diameters: '+str(d))
+                return d
             else:
                 logger.error(dim_error)
         elif isinstance(material, np.ndarray) and\

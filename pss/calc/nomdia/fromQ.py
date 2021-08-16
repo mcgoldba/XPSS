@@ -13,11 +13,11 @@ logger = Logger(debug=False)
 
 @NomDiaFactory.register('From flow rate')
 class FromQ(NomDia):
-    def __init__(self, pssvars):
-        super().__init__(pssvars)
-        self.dockwidget = pssvars.dockwidget
-        self.Q = pssvars.Q
-        self.nEDU = pssvars.nEDU
+    def __init__(self, data, params, pipedb):
+        super().__init__(data, params, pipedb)
+        self.Q = data.Q
+        self.nEDU = data.nEDU
+        self.n = data.n
 
     def get(self):
         """
@@ -53,15 +53,17 @@ class FromQ(NomDia):
         #TODO: update to allow for different materials and schedules for each pipe
 
         Q = self.Q
-        minV = float(self.dockwidget.txt_min_vel.text())
-        maxV = float(self.dockwidget.txt_max_vel.text())
-        material = self.dockwidget.cbo_pipe_mtl.currentText()
-        latMaterial = self.dockwidget.cbo_lat_pipe_mtl.currentText()
-        schedule = self.dockwidget.cbo_pipe_sch.currentText()
-        latSchedule = self.dockwidget.cbo_lat_pipe_sch.currentText()
-        latDia = float(self.dockwidget.cbo_lat_pipe_dia.currentText())
+        minV = self.params.minV
+        maxV = self.params.maxV
+        material = self.params.pipeMaterial
+        latMaterial = self.params.latConnMaterial
+        schedule = self.params.pipeSchedule
+        latSchedule = self.params.latConnPipeSch
+        latDia = self.params.latConnDia
 
-        pipedb = self.dockwidget.pipedb
+        #TODO:  Handle latDia units
+
+        pipedb = self.pipedb
 
         logger.debugger("material: "+str(material))
 
@@ -91,7 +93,7 @@ class FromQ(NomDia):
                 dmin = self._dstar(Q[i], minV)
                 dmax = self._dstar(Q[i], maxV)
                 for nd in diadb.keys():
-                    inDia = (float(diadb[nd])*units).to_base_units().magnitude
+                    inDia = (float(diadb[nd])*units)#.to_base_units().magnitude
                     logger.debugger("dia: "+str(inDia))
                     logger.debugger("dmin: "+str(dmin))
                     if inDia > dmin and inDia < dmax:
@@ -102,7 +104,7 @@ class FromQ(NomDia):
                                  " pipe index "+str(i))
             logger.debugger(str(matl))
 
-        return nomDia, matl, sch
+        return nomDia, matl.astype(str), sch.astype(str)
 
     def _dstar(self,q,v):
         """

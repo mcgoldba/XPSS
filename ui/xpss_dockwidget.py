@@ -42,7 +42,7 @@ from ..model.inp_reader import InpReader
 from ..model.network import Junction, Reservoir, Tank, Pipe, Pump, Valve
 from ..model.network_handling import NetworkUtils
 from ..model.network_handling import LinkHandler
-from ..pss.calc.driver import Driver
+from ..pss.driver import Driver
 from ..rendering import symbology
 from ..tools.add_junction_tool import AddJunctionTool
 from ..tools.add_pipe_tool import AddPipeTool
@@ -58,12 +58,14 @@ from .tags_dialog import TagsDialog
 from .utils import prepare_label as pre_l, set_up_button
 from . import misc
 
-from ..pss.calc.driver.driverfactory import DriverFactory
+from ..pss.driver import Driver
+from ..pss.calc.solvers.solverfactory import SolverFactory
 from ..pss.calc.nomdia.nomdiafactory import NomDiaFactory
 from ..pss.calc.flowheadrelations.flowheadrelationsfactory import FlowHeadRelationsFactory
 from ..pss.calc.opedumethod.opedumethodfactory import OpEduMethodFactory
 from ..pss.db.pipedatabase import PipeDatabase, PipeMaterial
-from ..pss.db.units import LengthUnits, FlowUnits, VelocityUnits
+from ..pss.db.units import LengthUnits, FlowUnits, VelocityUnits, PressureUnits, \
+    MetricSystem, USSystem, ImperialSystem
 
 from XPSS.logger import Logger
 
@@ -199,9 +201,12 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
             self.cbo_pipe_dia_activated
         )
 
+        self.txt_station_depth.setText("{:.1f}".format(6))
+        self.txt_station_depth.setValidator(QDoubleValidator())
+
         #- Solver
 
-        driver = self.cbo_driver.currentText()
+        driver = self.cbo_solver.currentText()
 
         self.txt_flowrate.setValidator(QDoubleValidator())
 
@@ -252,6 +257,15 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
         self.cbo_lat_pipe_mtl.activated.connect(
             self.cbo_lat_pipe_mtl_activated)
 
+        # Reporting
+
+        self.bto_metric.clicked.connect(self.bto_metric_clicked)
+        self.bto_us.clicked.connect(self.bto_us_clicked)
+        self.bto_imperial.clicked.connect(self.bto_imperial_clicked)
+
+        #TODO: This does nothing because combo boxes are not populated yet
+        self.update_report_units(USSystem)
+
 
         # Project File
 
@@ -263,8 +277,8 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
     def update(self, observable):
     #     # Update components
         #self.update_drivers_combo()
-        self.update_combo_from_factory_method(self.cbo_driver, DriverFactory)
-        self.update_flow_units_combo()
+        self.update_combo_from_factory_method(self.cbo_solver, SolverFactory)
+        self.update_flow_units_combo(self.cbo_flow_units)
         self.update_velocity_units_combo(self.cbo_min_vel_units)
         self.update_velocity_units_combo(self.cbo_max_vel_units)
         self.update_pipe_material_combo(self.cbo_pipe_mtl,
@@ -275,8 +289,10 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
                                         self.cbo_pipe_mtl.currentText())
         self.update_pipe_schedule_combo(self.cbo_lat_pipe_sch,
                                         self.cbo_lat_pipe_mtl.currentText())
-        self.update_pipe_diameter_units_combo(self.cbo_pipe_dia_units)
-        self.update_pipe_diameter_units_combo(self.cbo_lat_pipe_dia_units)
+        self.update_length_units_combo(self.cbo_pipe_dia_units)
+        self.update_length_units_combo(self.cbo_lat_pipe_dia_units)
+        self.update_length_units_combo(self.cbo_depth_units)
+        self.update_length_units_combo(self.cbo_dem_units)
         self.update_pipe_diameter_combo(
             self.cbo_pipe_dia,
             self.cbo_pipe_mtl.currentText(),
@@ -296,6 +312,11 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
     #     self.update_patterns_combo()
     #     self.update_curves_combo()
     #     self.update_tags_combos()
+        self.update_length_units_combo(self.cbo_rpt_units_pipe_length)
+        self.update_length_units_combo(self.cbo_rpt_units_diameter)
+        self.update_flow_units_combo(self.cbo_rpt_units_flow)
+        self.update_pressure_units_combo(self.cbo_rpt_units_pressure)
+        self.update_velocity_units_combo(self.cbo_rpt_units_velocity)
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
@@ -565,10 +586,10 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
         if setting_on:
             self.lbl_valve_setting.setText(setting_label)
 
-    def btn_hydraulics_clicked(self):
-        if self.hydraulics_dialog is None:
-            self.hydraulics_dialog = HydraulicsDialog(self, self.params)
-        self.hydraulics_dialog.show()
+    # def btn_hydraulics_clicked(self):
+    #     if self.hydraulics_dialog is None:
+    #         self.hydraulics_dialog = HydraulicsDialog(self, self.params)
+    #     self.hydraulics_dialog.show()
 
     def btn_quality_clicked(self):
         if self.quality_dialog is None:
@@ -659,6 +680,31 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
     def cbo_op_edu_method_activated(self):
         self.update_epa_coeff_status()
 
+    def bto_metric_clicked(self):
+        self.update_report_units(MetricSystem)
+
+    def bto_us_clicked(self):
+        self.update_report_units(USSystem)
+
+    def bto_imperial_clicked(self):
+        self.update_report_units(ImperialSystem)
+
+    def update_report_units(self, system):
+        idx = self.cbo_rpt_units_pipe_length.findText(system["length"])
+        self.cbo_rpt_units_pipe_length.setCurrentIndex(idx)
+
+        idx = self.cbo_rpt_units_flow.findText(system["flow"])
+        self.cbo_rpt_units_flow.setCurrentIndex(idx)
+
+        idx = self.cbo_rpt_units_pressure.findText(system["pressure"])
+        self.cbo_rpt_units_pressure.setCurrentIndex(idx)
+
+        idx = self.cbo_rpt_units_velocity.findText(system["velocity"])
+        self.cbo_rpt_units_velocity.setCurrentIndex(idx)
+
+        idx = self.cbo_rpt_units_diameter.findText(system["diameter"])
+        self.cbo_rpt_units_diameter.setCurrentIndex(idx)
+
     def pattern_editor(self):
         pattern_dialog = GraphDialog(self, self.iface.mainWindow(), self.params, edit_type=GraphDialog.edit_patterns)
         pattern_dialog.exec_()
@@ -701,9 +747,9 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
             self.txt_prj_file.setText(self.inp_file_path)
 
             # Prompt for hydaulic options
-            if self.hydraulics_dialog is None:
-                self.hydraulics_dialog = HydraulicsDialog(self, self.params, True)
-            self.hydraulics_dialog.show()
+            # if self.hydraulics_dialog is None:
+            #     self.hydraulics_dialog = HydraulicsDialog(self, self.params, True)
+            # self.hydraulics_dialog.show()
 
     def project_load_clicked(self):
 
@@ -740,10 +786,11 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
 
                 if not new_layers_d:
                     if hydraulics_dialog:
+                        pass
                         # Prompt for hydaulic options
-                        if self.hydraulics_dialog is None:
-                            self.hydraulics_dialog = HydraulicsDialog(self, self.params, True)
-                        self.hydraulics_dialog.show()
+                        # if self.hydraulics_dialog is None:
+                        #     self.hydraulics_dialog = HydraulicsDialog(self, self.params, True)
+                        # self.hydraulics_dialog.show()
 
             finally:
 
@@ -814,10 +861,13 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
                 lay_utils.remove_layer(out_layer)
 
             config_file.set_last_inp_file(self.inp_file_path)
-            driver = DriverFactory(self).create(self.cbo_driver.currentText())
-
+            # driver = SolverFactory(self).create(self.cbo_solver.currentText())
+            #
             rpt_file = os.path.splitext(self.inp_file_path)[0] + '.rpt'
             out_binary_file = os.path.splitext(self.inp_file_path)[0] + '.out'
+            #
+            # driver.run()
+            driver = Driver(self)
 
             driver.run()
 
@@ -909,16 +959,21 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
         symbology.refresh_layer(self.iface.mapCanvas(), self.params.valves_vlay)
 
     # def update_drivers_combo(self):
-    #     self.cbo_driver.clear()
-    #     for driver in DriverFactory._registry.keys():
-    #         self.cbo_driver.addItem(driver)
+    #     self.cbo_solver.clear()
+    #     for driver in SolverFactory._registry.keys():
+    #         self.cbo_solver.addItem(driver)
 
-    def update_flow_units_combo(self):
-        self.cbo_flow_units.clear()
+    def update_flow_units_combo(self, cbo):
+        cbo.clear()
         for unit in FlowUnits.keys():
-            self.cbo_flow_units.addItem(str(unit))
+            cbo.addItem(str(unit))
 
-    def update_pipe_diameter_units_combo(self, cbo):
+    def update_pressure_units_combo(self, cbo):
+        cbo.clear()
+        for unit in PressureUnits.keys():
+            cbo.addItem(str(unit))
+
+    def update_length_units_combo(self, cbo):
         cbo.clear()
         for unit in LengthUnits.keys():
             cbo.addItem(str(unit))
@@ -942,6 +997,8 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
         cbo.clear()
         for unit in VelocityUnits.keys():
             cbo.addItem(str(unit))
+
+
 
     def update_pipe_material_combo(self, cbo, cbo_units):
         cbo.clear()

@@ -1,7 +1,7 @@
 
 def initialize(self):
     """
-    Populate class variavles
+    Populate class variables
     """
 
     run_checks=False

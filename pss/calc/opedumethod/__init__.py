@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from XPSS.pss.calc import Calc
 
 class OpEduMethod(Calc, ABC):
-    def __init__(self, dockwidget, n):
-        self.dockwidget = dockwidget
+    def __init__(self, params, n):
+        self.params = params
         self.n = n
 
     #nOpEDU = None

@@ -7,137 +7,20 @@ import pandas as pd
 import time
 import os
 
-from XPSS.pss.calc.report import Report
-from XPSS.pss.calc.driver.driverfactory import DriverFactory
+from XPSS.pss.calc.solvers.solverfactory import SolverFactory
 from XPSS.pipedatabase import PipeMaterial, PipeClass
 
-from .driverfactory import DriverFactory
-from . import Driver
+from . import Solver
 from .constantflow import ConstantFlowRunner
 
 from XPSS.logger import Logger
 
 logger = Logger()
 
-#consoleWidget = iface.mainWindow().findChild( QDockWidget , QDockWidget, 'PythonConsole' )
-#consoleWidget.console.shellOut.clearConsole()
-
-# USER INPUTS
-
-start_time = time.time()
-
-#- Boolean Switches
-
-debug = True       #True:  Print additional information to assist in debugging
-
-zones = False       #True:  After calculating system characteristics simplify results by
-                    #        grouping into zones
-                    #False: Display results for each pipe.
-
-run_checks = False  #If True run the checks for a correct system geometry
-
-check_pipe_conns = False  #check if 2 nodes are connected to each pipe (also requires run_checks = True)
-check_node_conns = False    #check if every nodeis  connected to a pipe (also requires run_checks = True)
-
-all_pumps_on = False  # if true calculate with all pumps operating.  If false, calculate number operating edus based on specified statistical model (default EPA)
-
-calc_pipe_dia = False  # if True pipe diameters are calculated based on user specified velocity limits.
-                        # if False the diameters specified in the attribute table are used for the calculation.
-
-pipe_dia_based_zones = False  #if True zones are determined based on changes in diameter in the forcemain, otherwise divisions are based on user input
-
-#- Solver Methods
-
-op_edu_calc = 'EPA'   # define how the number of operating pumps will be calculated if all pumps are not operating.  Options are:
-                        #       "table": get value from a table based on the numbber of accumulated EDUs.
-                        #       "EPA":  calculated based on EPA Equation with the "A" and "B" coefficients as defined below.
-
-
-                        # if False pipe diameters are read from the QGIS vector layer
-
-p_calc = 'forward-sub'  #indicate how to calculate pressure.  options are:
-                        #   "fixed-point":  fixed point iteraation (convergence is not guaranteed)
-                        #   "broyden":       secant method
-                        #   "broyden-sp":    scipy's builtin version of broyden's method (a quasi-Newton method)
-                        #   "forward-sub"   forward substitution
-
-#- System Configuration Options
-
-units_dist = 1      #Units of measure for length.
-                    #Valid Options are:
-                    #   0: Meters
-                    #   1: Feet
-
-pump_model = 'M3069 HT 258'
-pump_database_location = os.path.join('~', 'Documents', 'QGIS', 'FlygtPumps.xls')
-#p_flow = 11 # flow rate for each pump [gpm]  (Assumes (1) all stations have the same pump and (2) the flowrate is constant regardless of the pressure within the system)
-gpd = 250 #gallons per day per EDU
-
-l_class = 'HDPE DR11'  # Pressure rating of pipe.  Options are:
-                        #       'PVC Sch. 40'
-                        #       'HDPE DR11'
-l_material = PipeMaterial.HDPE    #material of pipe.  Options are:
-                    #   PipeMaterial.PVC:  Standard Sch40 PVC Pipe
-                    #   PipeMaterial.HDPE:  DR11 HDPE Pipe
-
-
-v_min = 2  #minimum allowable velocity in any pipe [ft/s]
-v_max = 8  #maximum allowable velocity in any pipe [ft/s]
-#p_max = 180 #maximum allowable pressure in the pipeline [ft of water]
-
-A = 1.5 #EPA probability calculation coefficient (default = 0.5)
-B = 30 #EPA probability calculation coefficient (default = 20)
-
-lateral_conn_dia = 1.25 #diameter of the lateral connection
-
-station_depth = 5 #depth from ground discharge to water level for each station
-
-#- Filepaths
-
-script_filepath = 'C://Users//mgoldbach//AppData//Roaming//QGIS//QGIS3//profiles//default//python//plugins//XPSS//pss//'
-
-l_dia_table_file = 'pipe_data//pipe_dia.csv'
-
-l_rough_table_file = 'pipe_data//pipe_rough.csv'
-
-op_edu_table_file = 'op_edu.csv'
-
-l_dia_table =  pd.read_csv(script_filepath+l_dia_table_file) #table used to lookup pipe information
-
-l_rough_table = pd.read_csv(script_filepath+l_rough_table_file, index_col=0)
-
-op_edu_table = pd.read_csv(script_filepath+op_edu_table_file)
-
-Pipe_read_in = ['length']  # Values that are to be read from qepanet other options are [diameter, roughness, minor_loss, status, description, tag_name]]
-Pipe_pd_nm = ['Length [ft]']
-
-export_filepath = r'C:\Users\mgoldbach\Documents\PythonProjects\pss_submittal'
-
-export_filename = '\pss_analysis.csv'
-
-export_filename_pipes = '\pss_analysis_pipes.csv'
-
-export_filename_nodes = '\pss_analysis_nodes.csv'
-
-export_filename_stats = '\pss_analysis_stats.csv'
-
-export_filename_pipe_sum = '\pss_analysis_pipe_sum.csv'
-
-export_filename_inp = '\pss_analysis_inputs.csv'
-
-# END USER INPUTS
-#  NOTE:  This script was created to reproduce the E-One calculation.
-
-#dataMod = PSSDataMod()
-
-#inputs = {'Pipe Material': l_class, 'Pump Model': pump_model, 'Design EDU Flow [gpd]': gpd, 'EPA Coeff, A': A, 'EPA Coeff, B': B}
-
-
-@DriverFactory.register('Centrifugal')
-class Centrifugal(Driver):
-    def __init__(self, dockwidget):
-        super().__init__(dockwidget)
-        self.dockwidget = dockwidget
+@SolverFactory.register('Centrifugal')
+class Centrifugal(Solver):
+    def __init__(self, params, pipedb, data=None):
+        super().__init__(params, pipedb, data)
 
     def run(self):
         """
@@ -151,10 +34,9 @@ class Centrifugal(Driver):
 
         #logger.progress("ConstantFlow MRO: "+str(ConstantFlow.__mro__))
 
-        ConstantFlowRunner(self.dockwidget).run()
+        self.data = ConstantFlowRunner(self.params, self.pipedb).run()
 
-
-
+        return self.data
 
 
 #
