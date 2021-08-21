@@ -12,7 +12,6 @@ import qgis.utils
 from XPSS.pss.db.pipedatabase import PipeDatabase
 from XPSS.pss.db.units import LengthUnits
 
-from XPSS.pss.calc.nomdia.nomdiafactory import NomDiaFactory
 from XPSS.pss.calc.flowheadrelations.flowheadrelationsfactory import \
     FlowHeadRelationsFactory
 
@@ -20,7 +19,7 @@ from XPSS.pss.calc.operations import read_pipedb
 
 from XPSS.logger import Logger
 
-logger = Logger(debug=False)
+logger = Logger(debug=True)
 
 def nEDU(A):
 
@@ -90,30 +89,31 @@ def Area(data, d=None):
 
     nomDia = np.empty(Q.shape)
 
-def v(data, params, pipedb):
+def v(data, params, pipedb, pipe_fts):
     """Calculates velocity"""
 
-    d(data, params, pipedb)
+    d(data, params, pipedb, pipe_fts)
 
     logger.debugger("flow: "+str(data.Q))
     logger.debugger("diameter: "+str(data.d))
 
-    return (data.Q/(math.pi*d(data, params, pipedb)**2/4)).to_base_units()
+    return (data.Q/(math.pi*d(data, params, pipedb, pipe_fts)**2/4)).to_base_units()
 
-def d(data, params, pipedb):
+def d(data, params, pipedb, pipe_fts):
     "Inner pipe diameter."
     if data.d is None:
 
-        data = read_pipedb(data, params, pipedb)
+        data = read_pipedb(data, params, pipedb, pipe_fts)
 
         logger.debugger("materials: "+str(data.matl))
+        logger.debugger("nomDia: "+str(data.nomDia))
 
         data.d = pipedb.get(
             data.matl, data.sch, data.nomDia)
 
     return data.d
 
-def p(data, params, pipedb):
+def p(data, params, pipedb,  pipe_fts):
     """
     Calculates the pressure from flowrate
 
@@ -127,18 +127,18 @@ def p(data, params, pipedb):
 
     """
 
-    afl_ = afl(data, params, pipedb)
+    afl_ = afl(data, params, pipedb, pipe_fts)
 
     logger.debugger("afl units: "+str(afl_.units))
     logger.debugger("dh units: "+str(data.dh.units))
 
-    return afl(data, params, pipedb) + data.dh
+    return afl(data, params, pipedb, pipe_fts) + data.dh
 
-def afl(data, params, pipedb, force = False):
+def afl(data, params, pipedb, pipe_fts, force = False):
     """Calculates the accumulated friction loss"""
 
     if data.afl is None or force == True:
-        fl_ = fl(data, params, pipedb)
+        fl_ = fl(data, params, pipedb, pipe_fts)
         data.afl = np.add.accumulate(fl_.magnitude)*fl_.units
 
     return data.afl
@@ -149,7 +149,7 @@ def afl(data, params, pipedb, force = False):
 #     data.p = hl(data) + dh(data)
 
 
-def fl(data, params, pipedb, force=False):
+def fl(data, params, pipedb, pipe_fts, force=False):
     """Calculates the friction loss in pipe"""
 
     #TODO: Call to FlowHeadRelations must be modified for each additional
@@ -160,30 +160,31 @@ def fl(data, params, pipedb, force=False):
         logger.debugger("d: "+str(data.d))
         logger.debugger("L: "+str(data.L))
         logger.debugger("C: "+str(data.C))
-        C(data, params, pipedb)
+        C(data, params, pipedb, pipe_fts)
         logger.debugger("C: "+str(data.C))
 
 
         fhrelation = FlowHeadRelationsFactory(d = data.d, L = data.L,
-            roughness = roughness(data, params, pipedb), C = C(data, params, pipedb),
+            roughness = roughness(data, params, pipedb, pipe_fts),
+            C = C(data, params, pipedb, pipe_fts),
             pumps = data.pumps).create(params.lossEqn)
         data.fl = fhrelation(data.Q)
     return data.fl
 
-def C(data, params, pipedb):
+def C(data, params, pipedb, pipe_fts):
     """Returns the appropriate Hazen-Williams coefficient"""
 
     if data.C is None:
-        read_pipedb(data, params, pipedb)
+        read_pipedb(data, params, pipedb, pipe_fts)
         data.C = np.array([pipedb.materials[mat].cfactor for mat in
             data.matl.flatten()])
     return data.C.reshape((-1,1))
 
-def roughness(data, params, pipedb):
+def roughness(data, params, pipedb, pipe_fts):
     """Returns the appropriate Darcy-Weisbach roughness coefficient"""
 
     if data.roughness is None:
-        data = read_pipedb(data, params, pipedb)
+        data = read_pipedb(data, params, pipedb, pipe_fts)
         data.roughness = np.array([pipedb.materials[mat].roughness for mat in
         data.matl.flatten()], dtype="S24")
     return data.roughness

@@ -10,15 +10,15 @@ from XPSS.logger import Logger
 
 logger = Logger(debug=False)
 
-def dsConn(pssvars):
-    pipeID = pssvars.pipeProps["Pipe ID"]
+def dsConn(data):
+    pipeID = data.pipeProps["Pipe ID"]
 
-    dsConn = pssvars.pipeProps["Pipe ID"].to_numpy().T&pssvars.A
+    dsConn = data.pipeProps["Pipe ID"].to_numpy().T&data.A
     dsConn[0] = self.res
 
     return dsConn
 
-def read_pipedb(data, params, pipedb, force=False):
+def read_pipedb(data, params, pipedb, pipes_vlay, force=False):
 
     logger.debugger("nomDia: "+str(data.nomDia))
     logger.debugger("matl: "+str(data.matl))
@@ -29,7 +29,7 @@ def read_pipedb(data, params, pipedb, force=False):
 
         logger.debugger("Populating pipe properties")
 
-        nomdiamethod = NomDiaFactory(data, params, pipedb).create(params.nomDiaMethod)
+        nomdiamethod = NomDiaFactory(data, params, pipedb, pipes_vlay).create(params.nomDiaMethod)
 
         [data.nomDia, data.matl, data.sch] = nomdiamethod.get()
 

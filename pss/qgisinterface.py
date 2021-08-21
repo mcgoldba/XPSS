@@ -22,10 +22,10 @@ def _update_pipes_vlay(pssvars):
 
     for i, feat in enumerate(it):
         length =  pssvars.data.L[i][0].to(units['length']).magnitude
-        length_units = pssvars.data.L[i][0].units
+        length_units = units['length']
         #logger.debugger(str(length))
-        diameter =  pssvars.data.d[i][0].to(units['diameter']).magnitude
-        diameter_units = pssvars.data.d[i][0].units
+        diameter =  pssvars.data.nomDia[i][0].to(units['diameter']).magnitude
+        diameter_units = units['diameter']
         #logger.debugger(str(diameter))
         num_edu =  pssvars.data.nEDU[i][0]
         #logger.debugger(str(num_edu))
@@ -39,9 +39,9 @@ def _update_pipes_vlay(pssvars):
             zone_id=0
         #pssvars.log_progress("zone id: "+str(zone_id))
         velocity = pssvars.data.v[i][0].to(units["velocity"]).magnitude
-        velocity_units = pssvars.data.v[i][0].units
+        velocity_units = units['velocity']
         frictionloss = pssvars.data.fl[i][0].to(units["pressure"]).magnitude
-        frictionloss_units = pssvars.data.fl[i][0].units
+        frictionloss_units = units['pressure']
         logger.debugger("frictionloss_units: "+str(frictionloss_units))
         if pssvars.params.lossEqn == 'HazenWilliams':
             roughness = pssvars.data.C[i]

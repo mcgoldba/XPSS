@@ -194,7 +194,7 @@ class InpFile(object):
             self._append_valves(params, out)
 
             # Tags
-            self._append_tags(params, out)
+            #self._append_tags(params, out)
 
             # Demands
             self._append_demands(params, out)

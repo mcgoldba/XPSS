@@ -98,7 +98,14 @@ class PipeDatabase:
                 return self.materials[material]
 
         elif isinstance(material, np.ndarray) and\
-        isinstance(schedule, np.ndarray) and isinstance(nomDia, np.ndarray):
+        isinstance(schedule, np.ndarray) and nomDia is not None:
+            try: #Convert to baseunits if nomDia is dimensioned
+                nomDiaUnits = nomDia.units
+                baseunits_ = self.material[0][0].schedules[schedule[0][0]].baseunits
+                nomDia = nomDia.to(baseunits_)
+                nomDia = nomDia.magnitude
+            except:
+                pass
             if material.shape == schedule.shape == nomDia.shape:
                 #convert string fron byte like object
                 material = material.astype(str)

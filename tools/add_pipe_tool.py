@@ -319,7 +319,7 @@ class AddPipeTool(QgsMapTool):
                         # else:
                         #     pattern_id = None
                         NodeHandler.create_new_junction(
-                            self.params, new_start_junction, junction_eid, elev,
+                                self.params, new_start_junction, junction_eid, elev,
                              0, deltaz, None, 0, " ", " ", zone_end, pressure,
                              pressure_units)
 

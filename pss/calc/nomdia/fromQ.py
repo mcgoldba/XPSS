@@ -13,8 +13,8 @@ logger = Logger(debug=False)
 
 @NomDiaFactory.register('From flow rate')
 class FromQ(NomDia):
-    def __init__(self, data, params, pipedb):
-        super().__init__(data, params, pipedb)
+    def __init__(self, data, params, pipedb, pipe_fts):
+        super().__init__(data, params, pipedb, pipe_fts)
         self.Q = data.Q
         self.nEDU = data.nEDU
         self.n = data.n
@@ -104,7 +104,7 @@ class FromQ(NomDia):
                                  " pipe index "+str(i))
             logger.debugger(str(matl))
 
-        return nomDia, matl.astype(str), sch.astype(str)
+        return nomDia*units, matl.astype(str), sch.astype(str)
 
     def _dstar(self,q,v):
         """

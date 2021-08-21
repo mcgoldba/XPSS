@@ -1,10 +1,14 @@
+import numpy as np
+
 from XPSS.pss.calc.nomdia import NomDia
 from XPSS.pss.calc.nomdia.nomdiafactory import NomDiaFactory
 
+from XPSS.pss.db.units import LengthUnits
+
 @NomDiaFactory.register('From QGIS layer')
 class FromQGIS(NomDia):
-    def __init__(self, data, params, pipedb):
-        super().__init__(data, params, pipedb)
+    def __init__(self, data, params, pipedb, pipe_fts):
+        super().__init__(data, params, pipedb, pipe_fts)
 
     def get(self, **ignored):
         """
@@ -27,36 +31,12 @@ class FromQGIS(NomDia):
         #TODO: update to allow for different materials and schedules for each pipe
         #TODO:  allow for different length units
 
+        nomDia = np.array(self.pipe_fts['diameter']).reshape(-1,1)
 
-        material = self.lMaterial
-        latMaterial = self.latMaterial
-        sch = self.lSch
-        latSch = self.latSch
-        latDia = float(self.latDia)
+        units = LengthUnits[self.pipe_fts['diameter_units'][0]] #TODO Assumes all pipes are same units
 
-        pipedb = self.dockwidget.pipedb
+        material = np.array(self.pipe_fts['material']).reshape(-1,1)
 
-        if isinstance(material, str):
-            latID = pipedb.get(material, sch, latDia)
-            diadb = pipedb.get(material, sch).diameters
-            units = LengthUnits[pipedb.get(material, sch).baseunits]
+        schedule = np.full(material.shape, "DR11") #TODO: Add as QGIS attribute
 
-            logger.debugger("units: "+str(units))
-        else:
-            logger.error("Material specification must be a string value")
-
-        #nomDia = np.empty((self.n,1))
-
-        logger.debugger("pipeProps:\n"+str(pipeProps))
-
-        nomDia = self.pipeProps["Nominal Diameter"]
-
-        for i in range(self.n):
-            if not self.nEDU[i]: #if not end node, calculate diameter
-
-                nomDia[i] = diadb[nd]
-                if not nomDia[i]:
-                    logger.error("Could not find suitable diameter for"\
-                                 " pipe index "+str(i))
-
-        return nomDia
+        return nomDia*units, material, schedule

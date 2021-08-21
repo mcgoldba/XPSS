@@ -48,12 +48,14 @@ class Driver:
 
         update_vlay(solver)
 
-        #self.report = Report(self.data)
-
-        #self.report.create()
+        # self.report = Report(solver)
+        #
+        # self.report.create()
 
         end_time = time.time()
 
         logger.progress("Total Execution Time [s]: "+"{:.1f}".format(end_time - start_time))
 
         logger.progress("%%%%%%%%%%%%%%%%%%%%% END PSS CALC - SIMPLE %%%%%%%%%%%%%%%%%%%%%")
+
+        return solver

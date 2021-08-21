@@ -1032,7 +1032,8 @@ class InpReader(object):
                         if mm[0][0] == ';':
                             pass
                         else:
-                            tag = Tag(mm[0], mm[1], mm[2])
+                            #tag = Tag(mm[0], mm[1], mm[2])
+                            tah = Tag(mm[0], mm[1])
                             self.tags.append(tag)
 
     def read_line(self, s1):

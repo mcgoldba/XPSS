@@ -30,7 +30,8 @@ from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtWidgets import QFileDialog, QMessageBox, QApplication, QLabel, QToolTip, QDockWidget
 from qgis.PyQt.QtGui import QPixmap, QCursor, QDoubleValidator
 from qgis.gui import QgsProjectionSelectionDialog
-from qgis.core import QgsProject, QgsFeatureRequest, QgsMapLayer, Qgis
+from qgis.core import QgsProject, QgsFeatureRequest, QgsMapLayer, Qgis, \
+                        QgsGraduatedSymbolRenderer
 
 from ..geo_utils.utils import LayerUtils as lay_utils
 from .options_dialogs import HydraulicsDialog, QualityDialog, ReactionsDialog, TimesDialog, EnergyDialog, ReportDialog
@@ -59,10 +60,12 @@ from .utils import prepare_label as pre_l, set_up_button
 from . import misc
 
 from ..pss.driver import Driver
+from ..pss.report import Report
 from ..pss.calc.solvers.solverfactory import SolverFactory
 from ..pss.calc.nomdia.nomdiafactory import NomDiaFactory
 from ..pss.calc.flowheadrelations.flowheadrelationsfactory import FlowHeadRelationsFactory
 from ..pss.calc.opedumethod.opedumethodfactory import OpEduMethodFactory
+from ..pss.qml.qml_registry import qml_files, QML_FILEPATH
 from ..pss.db.pipedatabase import PipeDatabase, PipeMaterial
 from ..pss.db.units import LengthUnits, FlowUnits, VelocityUnits, PressureUnits, \
     MetricSystem, USSystem, ImperialSystem
@@ -93,6 +96,7 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
         #self.length_units = config['XPSS']['length_units'].split()
         self.pipedb = PipeDatabase().load(self.pipe_db_file_path,
                                         self.pipe_rgh_db_file_path)
+        self.solvervars = None
 
         logger.debugger(str(self.pipedb.materials))
 
@@ -175,6 +179,10 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
 
         # XPSS
         self.btn_xpss_run.clicked.connect(self.btn_xpss_run_clicked)
+
+        self.btn_view_results.clicked.connect(self.btn_view_results_clicked)
+
+        self.btn_display_style.clicked.connect(self.btn_display_style_clicked)
 
         #self.btn_xpss_output.clicked.connect(self.btn_xpss_output_clicked)
 
@@ -277,6 +285,7 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
     def update(self, observable):
     #     # Update components
         #self.update_drivers_combo()
+        self.update_display_style_combo()
         self.update_combo_from_factory_method(self.cbo_solver, SolverFactory)
         self.update_flow_units_combo(self.cbo_flow_units)
         self.update_velocity_units_combo(self.cbo_min_vel_units)
@@ -869,7 +878,7 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
             # driver.run()
             driver = Driver(self)
 
-            driver.run()
+            self.solvervars = driver.run()
 
             # Open log
             if not os.path.isfile(rpt_file):
@@ -882,6 +891,31 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
 
             self.log_dialog = LogDialog(self.iface.mainWindow(), rpt_file)
             self.log_dialog.exec_()
+
+    def btn_view_results_clicked(self):
+
+        if self.solvervars is not None:
+            report = Report(self.solvervars)
+            report.create()
+        else:
+            error_dialog = QtWidgets.QErrorMessage()
+            error_dialog.showMessage('No data found. Run calculation first!')
+
+    def btn_display_style_clicked(self):
+
+        style = self.cbo_display_style.currentText()
+        self.params.pipes_vlay.loadNamedStyle(os.path.join(
+            QML_FILEPATH, qml_files[style]['Pipes']))
+        self.params.junctions_vlay.loadNamedStyle(os.path.join(
+            QML_FILEPATH, qml_files[style]['Junctions']))
+
+        if style == 'Results': #TODO: soft code
+            renderer = QgsGraduatedSymbolRenderer()
+            renderer.updateClasses(self.params.junctions_vlay,renderer.Pretty, 8)
+            renderer.updateClasses(self.params.pipes_vlay, renderer.Pretty, 5)
+
+        self.params.pipes_vlay.triggerRepaint()
+        self.params.junctions_vlay.triggerRepaint()
 
     def btn_xpss_output_clicked(self):
         if self.output_dialog is None:
@@ -1028,6 +1062,12 @@ class XPSSDockWidget(QDockWidget, FORM_CLASS):
 
         for method in OpEduMethodFactory.registry.keys():
             self.cbo_op_edu_method.addItem(method)
+
+    def update_display_style_combo(self):
+        for option in qml_files.keys():
+            self.cbo_display_style.addItem(option)
+
+
 
     def select_pipedb_path_clicked(self):
 

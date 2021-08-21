@@ -35,9 +35,9 @@ class ConstantFlow(Solver):
 
 
         def run(self):
-            ConstantFlowRunner(self.params, self.pipedb, self.data).run()
+            self.data = ConstantFlowRunner(self.params, self.pipedb, self.data).run()
 
-            #update_vlay(self)
+            return self.data
 
 #This class is necessary to allow access from other 'Driver' derived classes
 class ConstantFlowRunner(Solver):
@@ -77,13 +77,15 @@ class ConstantFlowRunner(Solver):
         logger.debugger("data: "+str(self.data))
 
         logger.progress("Calculating velocities...")
-        self.data.v = v(self.data, self.params, self.pipedb)
+        self.data.v = v(self.data, self.params, self.pipedb,
+                        self.pipe_fts)
         logger.progress("...Done!")
 
         self.data.L = L(self.data)
 
         logger.progress("Calculating pressures...")
-        self.data.p = p(self.data, self.params, self.pipedb)
+        self.data.p = p(self.data, self.params, self.pipedb,
+                        self.pipe_fts)
         logger.progress("...Done!")
 
         return self.data

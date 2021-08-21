@@ -28,8 +28,8 @@ VelocityUnits = {
     }
 
 PressureUnits = {
-    "ft": ureg.foot_H2O,
-    "m": ureg.meter*ureg.water*ureg.g_0,
+    "ft": ureg.foot, #TODO: solvers calculate "head" rather than pressure
+    "m": ureg.meter,
     "psi": ureg.pound/(ureg.inch)**2,
     "Pa": ureg.pascal
 }
