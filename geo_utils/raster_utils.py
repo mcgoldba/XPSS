@@ -8,9 +8,8 @@ import collections
 import csv
 import math
 import numpy
-import ogr
 import sys
-from osgeo import gdal
+from osgeo import gdal, ogr
 from osgeo.gdalconst import GDT_Int32
 from qgis.core import QgsProject, QgsPointXY, QgsRasterLayer, QgsCoordinateTransform
 from .utils import Utils
