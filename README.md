@@ -44,7 +44,12 @@ XPSS makes the additional assumptions about the system:
     
     b.  If git is installed on the computer, open a command prompt from within the directory C:\{QGIS Install Dir}\profiles\default\python\qepanet and type:
         `git clone https://github.com/mcgoldba/XPSS.git`
-        
+
+3.  Install additional python dependency (pint) by opening up the python console from within QGIS and running:
+       ```
+       import subprocess
+       subprocess.call_check('python -m pip install pint')
+       ```
 
 # Additional Details
 
