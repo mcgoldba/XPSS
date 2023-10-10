@@ -33,7 +33,7 @@ class PipeDatabase:
                                               row[2],row[3])}
                         )
         if not nPipeMatl:
-            logger.error("Invalid pipr roughness database specification")
+            logger.error("Invalid pipe roughness database specification")
 
         nPipeDia = 0
         # Read in pipe diameters database

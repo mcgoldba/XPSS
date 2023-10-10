@@ -22,6 +22,7 @@ XPSS
 """
 from __future__ import absolute_import
 from builtins import object
+from pathlib import Path
 from qgis.PyQt.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, QFileInfo, QDateTime, QFile, QObject
 from qgis.PyQt.QtWidgets import QAction, QMessageBox, QFileDialog, QApplication
 from qgis.PyQt.QtGui import QIcon
@@ -41,7 +42,7 @@ from . import resources
 from .logger import Logger
 import configparser
 
-logger = Logger()
+logger = Logger(debug=True)
 
 class XPSS(object):
     """QGIS Plugin Implementation."""
@@ -260,6 +261,9 @@ class XPSS(object):
         #Get the stored settings
         config = configparser.ConfigParser()
         config_path = os.path.join(os.path.abspath(__file__), '..', 'config.ini')
+        config_user_path = Path.home() / '.xpss' / 'config.ini'
+        if config_user_path.is_file():
+            config_path = config_user_path
         config.read(config_path)
 
         # pump_db_file_path = config['XPSS']['pump_db_file_path']

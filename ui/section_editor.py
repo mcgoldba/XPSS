@@ -9,7 +9,7 @@ from .graphs import MyMplCanvas
 from ..geo_utils import bresenham, raster_utils, vector_utils
 from ..model.network_handling import LinkHandler, NetworkUtils, Junction, Pipe
 from matplotlib.path import Path
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from collections import OrderedDict
 import matplotlib.patches as patches
 import numpy as np

@@ -1,7 +1,8 @@
 from builtins import range
 from qgis.PyQt.QtWidgets import QSizePolicy
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
+# from matplotlib.figure import Figure
+# from matplotlib.pyplot import figure
 from matplotlib.ticker import FormatStrFormatter
 import numpy, numbers, math
 from ..model.binary_out_reader import OutputParamCodes
@@ -12,7 +13,8 @@ class MyMplCanvas(FigureCanvas):
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
 
-        self.figure = Figure(figsize=(width, height), dpi=dpi)
+        # self.figure = Figure(figsize=(width, height), dpi=dpi)
+        self.figure = figure(figsize=(width, height), dpi=dpi)
         self.figure.set_facecolor((1, 1, 1))
         self.axes = self.figure.add_subplot(1, 1, 1)
         self.axes.set_facecolor((1, 1, 1))
